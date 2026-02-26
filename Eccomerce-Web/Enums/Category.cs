@@ -11,6 +11,7 @@
         BeautyProducts,
         Auto,
         Furniture,
-        Jewelry
+        Jewelry,
+
     }
 }

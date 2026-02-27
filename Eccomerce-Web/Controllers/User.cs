@@ -88,7 +88,7 @@ namespace Eccomerce_Web.Controllers
         {
             var user = await _db.Users.ToListAsync();
 
-
+            
 
             return Ok(user);
         }
@@ -99,19 +99,10 @@ namespace Eccomerce_Web.Controllers
         {
             var user = _db.Users.FirstOrDefaultAsync(u => u.Id == id);
 
-            if (user == null)
-            {
-                return BadRequest("Invalid user data.");
-            }
+            if (user == null) return BadRequest("Invalid user data.");
 
             return Ok("success");
         }
-
-
-
-
-
-
 
 
         [HttpDelete("Delete-User-byid/{id}")]

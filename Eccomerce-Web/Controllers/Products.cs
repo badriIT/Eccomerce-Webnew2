@@ -12,6 +12,7 @@ namespace Eccomerce_Web.Controllers
     public class ProductsController : ControllerBase
     {
 
+// asdasd
         private readonly DataContext _Db;
 
         public ProductsController(DataContext Db) => _Db = Db;

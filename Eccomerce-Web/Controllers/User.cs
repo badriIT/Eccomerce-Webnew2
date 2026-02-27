@@ -20,7 +20,6 @@ namespace Eccomerce_Web.Controllers
 
 
         [HttpPost("Register")]
-
         public async Task<IActionResult> AddUser(RegisterDto user)
         {
             if (user == null)
@@ -88,7 +87,10 @@ namespace Eccomerce_Web.Controllers
         {
             var user = await _db.Users.ToListAsync();
 
-            
+            if (user == null)
+            {
+                return BadRequest("Invalid user.");
+            }
 
             return Ok(user);
         }

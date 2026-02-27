@@ -44,16 +44,6 @@ namespace Eccomerce_Web.Controllers
 
             };
 
-
-
-
-
-
-
-
-
-
-
             _Db.Products.Add(newProduct);
             await _Db.SaveChangesAsync();
             return CreatedAtAction(nameof(GetProductById), new { id = newProduct.Id }, newProduct);

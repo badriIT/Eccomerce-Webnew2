@@ -11,18 +11,19 @@ namespace Eccomerce_Web.Controllers
     [ApiController]
     public class ProductsController : ControllerBase
     {
-
-// asdasd
+     
         private readonly DataContext _Db;
 
         public ProductsController(DataContext Db) => _Db = Db;
-     
-
+        
+        
 
         [HttpPost("add-product")]
         public async Task<IActionResult> AddProduct(ProductDto product)
         {
-
+        
+  
+            
 
             if (product == null)
             {

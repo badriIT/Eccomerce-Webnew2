@@ -1,6 +1,9 @@
 ﻿using Eccomerce_Web.Data;
 using Eccomerce_Web.Dtos;
 using Eccomerce_Web.Models;
+using Eccomerce_Web.Services.Interfaces;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,8 +15,13 @@ namespace Eccomerce_Web.Controllers
     public class UserController : ControllerBase
     {
         private readonly DataContext _db;
+        private readonly IJWTService _JWTService;
 
-        public UserController(DataContext db) => _db = db;
+        public UserController(DataContext db, IJWTService jwt )
+        {
+            _db = db;
+            _JWTService = jwt;
+        }
 
 
 
@@ -53,16 +61,16 @@ namespace Eccomerce_Web.Controllers
             await _db.Users.AddAsync(newUser);
             await _db.SaveChangesAsync();
 
-            var userDto = new UserDto
+            //var userDto = new UserDto
+            //{
+            //    Email = newUser.Email
+            //};
+
+
+
+            ApiResponse<string> ResponseOK = new()
             {
-                Email = newUser.Email
-            };
-
-
-
-            ApiResponse<UserDto> ResponseOK = new()
-            {
-                Data = userDto,
+                Data = "success",
                 Status = StatusCodes.Status200OK,
                 Message = "Created Seccsessfully"
 
@@ -86,22 +94,19 @@ namespace Eccomerce_Web.Controllers
 
             if (user == null)
             {
-
-
-                ApiResponse<bool> ResNotFound = new()
+                return NotFound(new ApiResponse<bool>
                 {
                     Data = false,
                     Status = StatusCodes.Status404NotFound,
                     Message = "User not found"
-
-                };
-
-                return NotFound(ResNotFound);
-
+                });
             }
 
             if (!BCrypt.Net.BCrypt.Verify(login.Password, user.HashedPassword))
                 return BadRequest("Invalid password");
+
+            // ✅ Generate token from database user
+            var token = _JWTService.GetUserToken(user.UserProfile); // err here
 
             var userDto = new UserDto
             {
@@ -111,7 +116,11 @@ namespace Eccomerce_Web.Controllers
                 PhoneNumber = user.UserProfile?.PhoneNumber
             };
 
-            return Ok(userDto);
+            return Ok(new
+            {
+                Token = token,
+                User = userDto
+            });
         }
 
 
@@ -131,6 +140,7 @@ namespace Eccomerce_Web.Controllers
 
 
         [HttpGet("Get-User-byid/{id}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> GetUser(int id)
         {
             var user = await _db.UserProfiles.FirstOrDefaultAsync(u => u.UserId == id);
@@ -159,7 +169,7 @@ namespace Eccomerce_Web.Controllers
 
             ApiResponse<UserProfile> ResNotFound = new()
             {
-                Data = user,  // error here why
+                Data = user,  
                 Status = StatusCodes.Status404NotFound,
                 Message = "User not found"
             };

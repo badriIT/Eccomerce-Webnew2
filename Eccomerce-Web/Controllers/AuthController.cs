@@ -5,7 +5,8 @@ namespace Eccomerce_Web.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class LoginedUser : ControllerBase
+    public class AuthController : ControllerBase
     {
+
     }
 }

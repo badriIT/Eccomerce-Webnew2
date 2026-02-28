@@ -133,13 +133,13 @@ namespace Eccomerce_Web.Controllers
         [HttpGet("Get-User-byid/{id}")]
         public async Task<IActionResult> GetUser(int id)
         {
-            var user = _db.UserProfiles.FirstOrDefaultAsync(u => u.UserId == id);
+            var user = await _db.UserProfiles.FirstOrDefaultAsync(u => u.UserId == id);
 
             if (user == null)
             {
 
 
-                ApiResponse<bool> ResNotFound = new()
+                ApiResponse<bool> ResNotFounds = new()
                 {
                     Data = false,
                     Status = StatusCodes.Status404NotFound,
@@ -151,19 +151,18 @@ namespace Eccomerce_Web.Controllers
 
 
 
-                return NotFound(ResNotFound);
+                return NotFound(ResNotFounds);
             }
 
 
 
 
-            // ApiResponse<UserProfile> ResNotFound = new()
-            // {
-            //     Data = user,  // error here why
-            //     Status = StatusCodes.Status404NotFound,
-            //     Message = "User not found"
-
-            // };
+            ApiResponse<UserProfile> ResNotFound = new()
+            {
+                Data = user,  // error here why
+                Status = StatusCodes.Status404NotFound,
+                Message = "User not found"
+            };
 
 
             return Ok("success");

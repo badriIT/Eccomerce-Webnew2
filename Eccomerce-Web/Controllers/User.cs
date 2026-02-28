@@ -26,7 +26,21 @@ namespace Eccomerce_Web.Controllers
                 return BadRequest(ModelState);
 
             if (await _db.Users.AnyAsync(u => u.Email == user.Email))
-                return BadRequest("Email already exists");
+            {
+                ApiResponse<bool> ResponseNotFound = new()
+                {
+                    Data = false,
+                    Status = StatusCodes.Status400BadRequest,
+                    Message = "Email already exists"
+
+                };
+
+                return BadRequest(ResponseNotFound);
+            }
+
+
+
+
 
             var hashPassword = BCrypt.Net.BCrypt.HashPassword(user.Password);
 
@@ -44,7 +58,18 @@ namespace Eccomerce_Web.Controllers
                 Email = newUser.Email
             };
 
-            return Ok(userDto);
+
+
+            ApiResponse<UserDto> ResponseOK = new()
+            {
+                Data = userDto,
+                Status = StatusCodes.Status200OK,
+                Message = "Created Seccsessfully"
+
+            };
+
+
+            return Ok(ResponseOK);
         }
 
 
@@ -60,7 +85,20 @@ namespace Eccomerce_Web.Controllers
                 .FirstOrDefaultAsync(u => u.Email == login.Email);
 
             if (user == null)
-                return NotFound("User not found");
+            {
+
+
+                ApiResponse<bool> ResNotFound = new()
+                {
+                    Data = false,
+                    Status = StatusCodes.Status404NotFound,
+                    Message = "User not found"
+
+                };
+
+                return NotFound(ResNotFound);
+
+            }
 
             if (!BCrypt.Net.BCrypt.Verify(login.Password, user.HashedPassword))
                 return BadRequest("Invalid password");
@@ -83,10 +121,10 @@ namespace Eccomerce_Web.Controllers
         {
             var user = await _db.Users.ToListAsync();
 
-            if (user == null)
-            {
-                return BadRequest("Invalid user.");
-            }
+            // if (user == null)
+            // {
+            //     return BadRequest("Invalid user."); why? just return blank array 
+            // }
 
             return Ok(user);
         }
@@ -95,9 +133,38 @@ namespace Eccomerce_Web.Controllers
         [HttpGet("Get-User-byid/{id}")]
         public async Task<IActionResult> GetUser(int id)
         {
-            var user = _db.Users.FirstOrDefaultAsync(u => u.Id == id);
+            var user = _db.UserProfiles.FirstOrDefaultAsync(u => u.UserId == id);
 
-            if (user == null) return BadRequest("Invalid user data.");
+            if (user == null)
+            {
+
+
+                ApiResponse<bool> ResNotFound = new()
+                {
+                    Data = false,
+                    Status = StatusCodes.Status404NotFound,
+                    Message = "User not found"
+
+                };
+
+
+
+
+
+                return NotFound(ResNotFound);
+            }
+
+
+
+
+            // ApiResponse<UserProfile> ResNotFound = new()
+            // {
+            //     Data = user,  // error here why
+            //     Status = StatusCodes.Status404NotFound,
+            //     Message = "User not found"
+
+            // };
+
 
             return Ok("success");
         }
@@ -110,7 +177,17 @@ namespace Eccomerce_Web.Controllers
 
             if (user == null)
             {
-                return BadRequest("Invalid user data.");
+
+                ApiResponse<bool> ResNotFound = new()
+                {
+                    Data = false,
+                    Status = StatusCodes.Status404NotFound,
+                    Message = "User not found"
+
+                };
+
+
+                return NotFound(ResNotFound);
             }
 
             _db.Remove(user);

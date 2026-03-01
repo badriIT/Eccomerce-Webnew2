@@ -1,4 +1,5 @@
 ﻿using Eccomerce_Web.Data;
+using Eccomerce_Web.Dtos;
 using Eccomerce_Web.Models;
 using Eccomerce_Web.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -13,99 +14,131 @@ namespace Eccomerce_Web.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
+        private readonly DataContext _db;
+        private readonly IJWTService _JWTService;
 
-
-
-
-        private readonly DataContext _db ;
-        private readonly IJWTService _IJWTService;
-
-        public AuthController(DataContext db, IJWTService JW)
+        public AuthController(DataContext db, IJWTService jwt )
         {
             _db = db;
-            _IJWTService = JW;
-
+            _JWTService = jwt;
         }
 
 
 
-        [HttpGet("Get-User")]
-        public async Task<IActionResult> GetUser()
+
+
+        [HttpPost("Register")]
+        public async Task<IActionResult> AddUser(RegisterDto user)
         {
-            var user = await _db.Users.ToListAsync();
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            // if (user == null)
-            // {
-            //     return BadRequest("Invalid user."); why? just return blank array 
-            // }
-
-            return Ok(user);
-        }
-
-
-        [HttpGet("Get-User-byid/{id}")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-        public async Task<IActionResult> GetUser(int id)
-        {
-            var user = await _db.UserProfiles.FirstOrDefaultAsync(u => u.UserId == id);
-
-            if (user == null)
+            if (await _db.Users.AnyAsync(u => u.Email == user.Email))
             {
-
-
-                ApiResponse<bool> ResNotFounds = new()
+                ApiResponse<bool> ResponseNotFound = new()
                 {
                     Data = false,
-                    Status = StatusCodes.Status404NotFound,
-                    Message = "User not found"
+                    Status = StatusCodes.Status400BadRequest,
+                    Message = "Email already exists"
 
                 };
 
-
-
-
-
-                return NotFound(ResNotFounds);
+                return BadRequest(ResponseNotFound);
             }
 
 
 
 
-            ApiResponse<UserProfile> ResNotFound = new()
+
+            var hashPassword = BCrypt.Net.BCrypt.HashPassword(user.Password);
+
+            var newUser = new User
             {
-                Data = user,
-                Status = StatusCodes.Status404NotFound,
-                Message = "User not found"
+                UserName = user.FullName,
+                Email = user.Email,
+                HashedPassword = hashPassword
+            };
+
+            await _db.Users.AddAsync(newUser);
+            await _db.SaveChangesAsync();
+
+
+
+            var userProfile = new UserProfile
+            {
+                FullName = user.FullName,
+                Email = user.Email,
+                UserId = newUser.Id
             };
 
 
-            return Ok("success");
+            await _db.UserProfiles.AddAsync(userProfile);
+            await _db.SaveChangesAsync();
+
+
+            //var userDto = new UserDto
+            //{
+            //    Email = newUser.Email
+            //};
+
+
+
+            ApiResponse<string> ResponseOK = new()
+            {
+                Data = "success",
+                Status = StatusCodes.Status200OK,
+                Message = "Created Seccsessfully"
+
+            };
+
+
+
+
+            return Ok(ResponseOK);
         }
 
 
-        [HttpDelete("Delete-User-byid/{id}")]
-        public async Task<IActionResult> GetUserById(int id)
+
+        [HttpPost("Login")]
+        public async Task<IActionResult> Login(LoginDto login)
         {
-            var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var user = await _db.Users
+                .Include(u => u.UserProfile)
+                .FirstOrDefaultAsync(u => u.Email == login.Email);
 
             if (user == null)
             {
-
-                ApiResponse<bool> ResNotFound = new()
+                return NotFound(new ApiResponse<bool>
                 {
                     Data = false,
                     Status = StatusCodes.Status404NotFound,
                     Message = "User not found"
-
-                };
-
-
-                return NotFound(ResNotFound);
+                });
             }
 
-            _db.Remove(user);
-            await _db.SaveChangesAsync();
-            return Ok("success");
+            if (!BCrypt.Net.BCrypt.Verify(login.Password, user.HashedPassword))
+                return BadRequest("Invalid password");
+
+          
+            var token = _JWTService.GetUserToken(user.UserProfile); 
+
+           
+
+            return Ok(new
+            {
+                Token = token,
+               
+            });
         }
+
+
+
+        
+
+
+
     }
 }

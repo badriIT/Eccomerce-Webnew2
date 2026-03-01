@@ -31,11 +31,12 @@ namespace Eccomerce_Web.Services.Implementations
                 ;
 
             var Claims = new[]
-            {
-                new Claim(JwtRegisteredClaimNames.NameId, user.UserId.ToString()),
-                new Claim(JwtRegisteredClaimNames.Name, user.FullName),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email)
-            }; 
+           {
+            new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+            new Claim(ClaimTypes.Name, user.FullName),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.Role, user.Role)
+           };
 
             var token = new JwtSecurityToken(
 

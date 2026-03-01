@@ -1,5 +1,5 @@
-﻿using Eccomerce_Web.Data;
-using Eccomerce_Web.Dtos;
+﻿using System.IdentityModel.Tokens.Jwt;
+using Eccomerce_Web.Data;
 using Eccomerce_Web.Models;
 using Eccomerce_Web.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace Eccomerce_Web.Controllers
 {
@@ -14,131 +15,118 @@ namespace Eccomerce_Web.Controllers
     [ApiController]
     public class UserController : ControllerBase
     {
-        private readonly DataContext _db;
-        private readonly IJWTService _JWTService;
 
-        public UserController(DataContext db, IJWTService jwt )
+
+
+
+        private readonly DataContext _db ;
+        private readonly IJWTService _IJWTService;
+
+        public UserController(DataContext db, IJWTService JW)
         {
             _db = db;
-            _JWTService = jwt;
+            _IJWTService = JW;
+
         }
 
 
 
+        //[HttpGet("Get-User")]
+        //public async Task<IActionResult> GetUser()
+        //{
+        //    var user = await _db.Users.Include(s => s.UserProfile).ToListAsync();
+
+        //    // if (user == null)
+        //    // {
+        //    //     return BadRequest("Invalid user."); why? just return blank array 
+        //    // }
+
+        //    return Ok(user);
+        //}
 
 
-        [HttpPost("Register")]
-        public async Task<IActionResult> AddUser(RegisterDto user)
+        //////////////////////////////// stop here uppen cuz it is admin functionality and we will do it in admin controller
+
+
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
+        [HttpGet("Get-Current-User")]
+        public async Task<IActionResult> GetUserProfile()
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            var UserRoleClaim = User.FindFirst(ClaimTypes.Role);
 
-            if (await _db.Users.AnyAsync(u => u.Email == user.Email))
-            {
-                ApiResponse<bool> ResponseNotFound = new()
-                {
-                    Data = false,
-                    Status = StatusCodes.Status400BadRequest,
-                    Message = "Email already exists"
+            if (userIdClaim == null)
+                return Unauthorized();
 
-                };
-
-                return BadRequest(ResponseNotFound);
-            }
+            if (UserRoleClaim == null)
+                return Unauthorized();
 
 
 
+            int userId = int.Parse(userIdClaim.Value);
 
-
-            var hashPassword = BCrypt.Net.BCrypt.HashPassword(user.Password);
-
-            var newUser = new User
-            {
-                UserName = user.FullName,
-                Email = user.Email,
-                HashedPassword = hashPassword
-            };
-
-            await _db.Users.AddAsync(newUser);
-            await _db.SaveChangesAsync();
-
-
-
-            var userProfile = new UserProfile
-            {
-                FullName = user.FullName,
-                Email = user.Email,
-                UserId = newUser.Id
-            };
-
-
-            await _db.UserProfiles.AddAsync(userProfile);
-            await _db.SaveChangesAsync();
-
-
-            //var userDto = new UserDto
-            //{
-            //    Email = newUser.Email
-            //};
-
-
-
-            ApiResponse<string> ResponseOK = new()
-            {
-                Data = "success",
-                Status = StatusCodes.Status200OK,
-                Message = "Created Seccsessfully"
-
-            };
-
-
-
-
-            return Ok(ResponseOK);
-        }
-
-
-
-        [HttpPost("Login")]
-        public async Task<IActionResult> Login(LoginDto login)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var user = await _db.Users
-                .Include(u => u.UserProfile)
-                .FirstOrDefaultAsync(u => u.Email == login.Email);
+            var user = await _db.UserProfiles
+                .FirstOrDefaultAsync(u => u.UserId == userId);
 
             if (user == null)
             {
-                return NotFound(new ApiResponse<bool>
+                ApiResponse<bool> ResNotFounds = new()
                 {
                     Data = false,
                     Status = StatusCodes.Status404NotFound,
                     Message = "User not found"
-                });
+                };
+
+                return NotFound(ResNotFounds);
             }
 
-            if (!BCrypt.Net.BCrypt.Verify(login.Password, user.HashedPassword))
-                return BadRequest("Invalid password");
-
-            // ✅ Generate token from database user
-            var token = _JWTService.GetUserToken(user.UserProfile); // err here
-
-           
-
-            return Ok(new
+            ApiResponse<UserProfile> Res = new()
             {
-                Token = token,
-                
-            });
+                Data = user,
+                Status = StatusCodes.Status200OK,
+                Message = ""
+            };
+
+            return Ok(Res);
         }
 
 
+        //[HttpDelete("Delete-User-byid/{id}")]
+        //public async Task<IActionResult> GetUserById(int id)
+        //{
+        //    var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id);
 
-        
+        //    if (user == null)
+        //    {
+
+        //        ApiResponse<bool> ResNotFound = new()
+        //        {
+        //            Data = false,
+        //            Status = StatusCodes.Status404NotFound,
+        //            Message = "User not found"
+
+        //        };
+
+
+        //        return NotFound(ResNotFound);
+        //    }
+
+        //    _db.Remove(user);
+        //    await _db.SaveChangesAsync();
+        //    return Ok("success");
+        //}
+
+
+        //////////////////////////////// stop here uppen cuz it is admin functionality and we will do it in admin controller
+        ///
 
 
 
+        /// if you want to make any changes to users acc like now it is good for you tu build user profile update you know with new dto maybe btw for finding use claims like jwt stores this info in it.
+        /// now the user can only get his profile but if you want to make any changes to users acc like now it is good for you tu build user profile update you know with new dto maybe btw for finding use claims like jwt stores this info in it.
+        /// also now works jwt auth in user login register and getting look throught it.
+        /// role based access is on also
+        /// for now make update.
+        /// everything is good now KEEP GRWING!!!
     }
 }

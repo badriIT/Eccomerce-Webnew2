@@ -13,6 +13,7 @@ public class UserProfile
     public string? FullName { get; set; } 
     public string? PhoneNumber { get; set; }
 
+    public string Role { get; set; } = "User";
 
 
     public List<Order> Order { get; set; } = new();

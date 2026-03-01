@@ -304,5 +304,10 @@ namespace Eccomerce_Web.Controllers
 
 
         //// we want to add Userverification by email, add new property userIsVerified in userProfile when code is right user verification will be verified from enum and when it is the other options will work we have to protect api with jwt + verification property fron enum.  verified and no verified.  1 end point verify otp.         
+
+
+
+
+        // I THINK THIS BITCH WORKS NOW!!!!!!!!
     }
 }

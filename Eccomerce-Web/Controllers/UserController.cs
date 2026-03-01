@@ -55,41 +55,114 @@ namespace Eccomerce_Web.Controllers
         public async Task<IActionResult> GetUserProfile()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            var UserRoleClaim = User.FindFirst(ClaimTypes.Role);
+            var userRoleClaim = User.FindFirst(ClaimTypes.Role);
 
-            if (userIdClaim == null)
+            if (userIdClaim == null || userRoleClaim == null)
                 return Unauthorized();
-
-            if (UserRoleClaim == null)
-                return Unauthorized();
-
-
 
             int userId = int.Parse(userIdClaim.Value);
 
             var user = await _db.UserProfiles
+                .Include(u => u.CartItems)
+                    .ThenInclude(c => c.Product)
+                    .Include(o => o.Order).ThenInclude(p => p.Products)
+                     .Include(f => f.FavoritedProducts) 
                 .FirstOrDefaultAsync(u => u.UserId == userId);
 
             if (user == null)
-            {
-                ApiResponse<bool> ResNotFounds = new()
+                return NotFound(new ApiResponse<bool>
                 {
                     Data = false,
                     Status = StatusCodes.Status404NotFound,
                     Message = "User not found"
-                };
+                });
 
-                return NotFound(ResNotFounds);
-            }
 
-            ApiResponse<UserProfile> Res = new()
+
+            WholeUserProfileDto userProfileDto = new WholeUserProfileDto
             {
-                Data = user,
-                Status = StatusCodes.Status200OK,
-                Message = ""
+               
+                Id = user.Id,
+                UserId = user.UserId,
+                Email = user.Email,
+                FullName = user.FullName,
+                PhoneNumber = user.PhoneNumber,
+                Role = user.Role,
+                CartItems = user.CartItems.Select(c => new ForCartItems
+                {
+                    SelectedQuantity = c.Quantity,
+                    
+                    Product = new ForProfileProductDto
+                    {
+                        Id = c.Product.Id,
+                        Name = c.Product.Name,
+                        Price = c.Product.Price,
+                        Description = c.Product.Description,
+                        Size = c.Product.Size,
+                        Category = c.Product.Category,
+                        CreatedAt = c.Product.CreatedAt,
+                        IsFavorited = user.FavoritedProducts.Any(fp => fp.Id == c.Product.Id),
+                        Quantity = c.Product.Quantity
+
+
+
+                        
+
+
+                    }
+                }).ToList(),
+                Order = user.Order.Select(o => new ForWholeProfileOrderDto
+                {
+                    OrderNumber = o.OrderNumber,
+
+                    Products = o.Products.Select(p => new ForCartItems
+                    {
+                        SelectedQuantity = p.Quantity,
+                        Product = new ForProfileProductDto
+                        {
+                            Id = p.Product.Id,
+                            Name = p.Product.Name,
+                            Price = p.Product.Price,
+                            Description = p.Product.Description,
+                            Size = p.Product.Size,
+                            Category = p.Product.Category,
+                            CreatedAt = p.Product.CreatedAt,
+                            IsFavorited = user.FavoritedProducts.Any(fp => fp.Id == p.Product.Id),
+                            Quantity = p.Product.Quantity
+
+                        }
+                    }).ToList()
+                }).ToList(),
+
+                FavoritedProducts = user.FavoritedProducts.Select(fp => new ForProfileProductDto
+                {
+
+                    Id = fp.Id,
+                    Name = fp.Name,
+                    Price = fp.Price,
+                    Description = fp.Description,
+                    Size = fp.Size,
+                    Category = fp.Category,
+                    CreatedAt = fp.CreatedAt,
+                    IsFavorited = true, // Since these are favorited products, we can set this to true
+                    //Quantity = user.CartItems.FirstOrDefault(ci => ci.ProductId == fp.Id)?.Quantity ?? 0 // Get quantity from cart if exists
+
+                }).ToList()
+
+                
+
+               
             };
 
-            return Ok(user);
+            var TotalPrice = user.CartItems.Sum(c => c.Quantity * c.Product.Price);
+
+
+            return Ok(new ApiResponse<WholeUserProfileDto>
+            {
+                Data = userProfileDto, 
+                Status = StatusCodes.Status200OK,
+                Message = $"Total Price is {TotalPrice}" /////// display: flex; 
+            });
         }
 
 
@@ -230,11 +303,6 @@ namespace Eccomerce_Web.Controllers
 
 
 
-        /// if you want to make any changes to users acc like now it is good for you tu build user profile update you know with new dto maybe btw for finding use claims like jwt stores this info in it.
-        /// now the user can only get his profile but if you want to make any changes to users acc like now it is good for you tu build user profile update you know with new dto maybe btw for finding use claims like jwt stores this info in it.
-        /// also now works jwt auth in user login register and getting look throught it.
-        /// role based access is on also
-        /// for now make update.
-        /// everything is good now KEEP GRWING!!!
+        //// we want to add Userverification by email, add new property userIsVerified in userProfile when code is right user verification will be verified from enum and when it is the other options will work we have to protect api with jwt + verification property fron enum.  verified and no verified.  1 end point verify otp.         
     }
 }

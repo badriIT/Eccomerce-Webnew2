@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using Eccomerce_Web.Dtos;
+using System.Xml;
 
 namespace Eccomerce_Web.Controllers
 {
@@ -87,8 +89,71 @@ namespace Eccomerce_Web.Controllers
                 Message = ""
             };
 
-            return Ok(Res);
+            return Ok(user);
         }
+
+
+        /// this is update user badrii !!!!!!!!!!
+        /// 
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
+        [HttpPut("Update-Current-User")]
+        public async Task<IActionResult> UpdateCurrentUser(UserProfileUPTDto dto)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (userIdClaim == null)
+                return Unauthorized();
+
+            int userId = Convert.ToInt32(userIdClaim.Value);
+
+            var profileUser = await _db.UserProfiles
+                .FirstOrDefaultAsync(u => u.UserId == userId);
+
+            if (profileUser == null)
+                return NotFound("Profile user not found");
+
+            profileUser.FullName = dto.FullName;
+            profileUser.PhoneNumber = dto.PhoneNumber;
+            profileUser.Email = dto.Email;
+
+            await _db.SaveChangesAsync();
+
+            return Ok("Updated successfully");
+        }
+
+
+        /// this is delete badri!!!!!!!!!!!!!!!!!!!!!!!!!!
+        /// 
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
+        [HttpDelete("Delete-Current-User")]
+        public async Task<IActionResult> DeleteCurrentUser()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (userIdClaim == null)
+                return Unauthorized();
+
+            int userId = Convert.ToInt32(userIdClaim.Value);
+
+            var profileUser = await _db.UserProfiles
+                .FirstOrDefaultAsync(u => u.UserId == userId);
+
+            if (profileUser == null)
+                return NotFound("Profile user not found");
+
+            _db.Remove(profileUser);
+            await _db.SaveChangesAsync();
+
+            ApiResponse<UserProfile> res = new()
+            {
+                Data = profileUser,
+                Status = StatusCodes.Status200OK,
+                Message = "Removed successfully"
+            };
+
+            return Ok(res);
+        }
+
 
 
         //[HttpDelete("Delete-User-byid/{id}")]

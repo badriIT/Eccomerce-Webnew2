@@ -21,14 +21,8 @@ namespace Eccomerce_Web.Services.Implementations
             
 
             var secuirityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
-
-
-            ;
-
-
             var credentials = new SigningCredentials(secuirityKey, SecurityAlgorithms.HmacSha256);
 
-                ;
 
             var Claims = new[]
            {

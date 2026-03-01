@@ -106,7 +106,7 @@ namespace Eccomerce_Web.Controllers
 
             int userId = Convert.ToInt32(userIdClaim.Value);
 
-            var profileUser = await _db.UserProfiles
+            var profileUser = await _db.UserProfiles.Include(c => c.CartItems)
                 .FirstOrDefaultAsync(u => u.UserId == userId);
 
             if (profileUser == null)

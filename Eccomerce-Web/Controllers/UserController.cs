@@ -113,12 +113,55 @@ namespace Eccomerce_Web.Controllers
                 return NotFound("Profile user not found");
 
             profileUser.FullName = dto.FullName;
+
+
+
+
+            var ExistingPhoneNumlUser = await _db.UserProfiles
+                .FirstOrDefaultAsync(u => u.PhoneNumber == dto.PhoneNumber && u.UserId != userId);
+
+            if (ExistingPhoneNumlUser != null)
+            {
+                ApiResponse<bool> ResEmailConflict = new()
+                {
+                    Data = false,
+                    Status = StatusCodes.Status409Conflict,
+                    Message = "Phone is already in use by another user"
+                };
+                return Conflict(ResEmailConflict);
+            }
+
+
+
             profileUser.PhoneNumber = dto.PhoneNumber;
-            profileUser.Email = dto.Email;
+
+            var ExistingEmailUser = await _db.UserProfiles
+                .FirstOrDefaultAsync(u => u.Email == dto.Email && u.UserId != userId);
+
+            if (ExistingEmailUser != null)
+            {
+                ApiResponse<bool> ResEmailConflict = new()
+                {
+                    Data = false,
+                    Status = StatusCodes.Status409Conflict,
+                    Message = "Email is already in use by another user"
+                };
+                return Conflict(ResEmailConflict);
+            } 
+
+                profileUser.Email = dto.Email;
 
             await _db.SaveChangesAsync();
 
-            return Ok("Updated successfully");
+            ApiResponse<UserProfile> res = new()
+            {
+                Data = profileUser,
+                Status = StatusCodes.Status200OK,
+                Message = "Updated successfully"
+            };
+
+
+            return Ok(res);
         }
 
 

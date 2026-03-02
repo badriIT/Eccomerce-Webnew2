@@ -6,7 +6,5 @@
            public int SelectedQuantity { get; set; }
 
            public ForProfileProductDto Product { get; set; }
-
-           
     }
 }

@@ -171,6 +171,41 @@ namespace Eccomerce_Web.Controllers
                 Message = "Cart item updated"
             });
         }
+
+
+        //[HttpPost("Buy-Products")]
+        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
+        //public async Task<IActionResult> BuyProducts()
+        //{
+        //    if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
+        //        return Unauthorized();
+
+        //    var user = await _db.UserProfiles
+        //        .Include(u => u.CartItems)
+        //        .ThenInclude(ci => ci.Product)
+        //        .FirstOrDefaultAsync(u => u.Id == userId);
+
+        //    if (user == null)
+        //        return NotFound("User not found");
+
+        //    if (!user.CartItems.Any())
+        //        return BadRequest("Cart is empty");
+
+        //    var order = new Order
+        //    {
+        //        //seavse
+        //    };
+
+        //    _db.Orders.Add(order);
+
+        //    // Clear cart
+        //    _db.CartItems.RemoveRange(user.CartItems);
+
+        //    await _db.SaveChangesAsync();
+
+        //    return Ok(new { message = "Order placed successfully", orderId = order.Id });
+        //}
+
     }
-    
+
 }

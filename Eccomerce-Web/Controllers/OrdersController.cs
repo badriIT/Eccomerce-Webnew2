@@ -34,7 +34,7 @@ namespace Eccomerce_Web.Controllers
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
                 return Unauthorized();
 
-            if (Quantity <= 0) // ← validate quantity before hitting the database + need validate Item quantity here
+            if (Quantity <= 0)
                 return BadRequest(new ApiResponse<bool>
                 {
                     Data = false,
@@ -42,7 +42,6 @@ namespace Eccomerce_Web.Controllers
                     Message = "Quantity must be greater than zero"
                 });
 
-            // Instead of loading the full user graph just to check existence:
             bool userExists = await _db.UserProfiles.AnyAsync(u => u.UserId == userId);
              if (!userExists) return Unauthorized();
 
@@ -101,6 +100,136 @@ namespace Eccomerce_Web.Controllers
                 Data = order,  // ← return addedItem, not order
                 Status = StatusCodes.Status200OK,
                 Message = "Order created successfully"
+            });
+        }
+
+
+        [HttpGet("Get-All-Orders")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
+        public async Task<IActionResult> GetAllOrders()
+        {
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
+                return Unauthorized();
+
+            bool userExists = await _db.UserProfiles.AnyAsync(u => u.UserId == userId);
+            if (!userExists) return Unauthorized();
+
+            var orders = await _db.Orders
+                .Where(o => o.UserId == userId)
+                .Include(o => o.Products)
+                    .ThenInclude(ci => ci.Product)
+                .ToListAsync();
+
+            return Ok(new ApiResponse<List<Order>>
+            {
+                Data = orders,
+                Status = StatusCodes.Status200OK,
+                Message = "Orders retrieved successfully"
+            });
+        }
+
+        [HttpPost("Create-Order-From-Cart")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
+        public async Task<IActionResult> CreateOrderFromCart()
+        {
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
+                return Unauthorized();
+
+            var userP = await _db.UserProfiles
+                .Include(u => u.CartItems)
+                    .ThenInclude(ci => ci.Product) 
+                .FirstOrDefaultAsync(u => u.UserId == userId);
+
+            if (userP == null)
+                return Unauthorized();
+
+            if (userP.CartItems == null || !userP.CartItems.Any())
+                return NotFound(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status404NotFound,
+                    Message = "Cart is empty"
+                });
+
+            foreach (var cartItem in userP.CartItems)
+            {
+                if (cartItem.Product == null)
+                    return BadRequest(new ApiResponse<bool>
+                    {
+                        Data = false,
+                        Status = StatusCodes.Status400BadRequest,
+                        Message = $"Product not found for cart item {cartItem.Id}"
+                    });
+
+                if (cartItem.Quantity <= 0)
+                    return BadRequest(new ApiResponse<bool>
+                    {
+                        Data = false,
+                        Status = StatusCodes.Status400BadRequest,
+                        Message = $"Invalid quantity for product: {cartItem.Product.Name}"
+                    });
+
+
+            }
+
+            var order = new Order
+            {
+                UserId = userP.Id,
+                OrderNumber = Guid.NewGuid().ToString("N")[..10].ToUpper(),
+                Products = userP.CartItems.ToList(),
+                User = userP.User,
+            };
+
+            userP.Order ??= new List<Order>();
+            userP.Order.Add(order);
+
+            // ??= <-- es aris 
+            //if (variable == null)
+            //{
+            //    variable = value;
+            //} ase amowmebs ra
+
+
+            await _db.SaveChangesAsync();
+
+            var addedOrder = await _db.Orders
+                .Include(o => o.Products)
+                    .ThenInclude(ci => ci.Product)
+                .FirstOrDefaultAsync(o => o.Id == order.Id);
+
+            return Ok(new ApiResponse<Order>
+            {
+                Data = addedOrder, // ← return the re-fetched entity, not the local variable
+                Status = StatusCodes.Status200OK,
+                Message = "Order created successfully"
+            });
+        }
+
+
+
+        [HttpDelete("Order-Delete")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
+
+        public async Task<IActionResult> RemoveOrder(int OrderId)
+        {
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
+                return Unauthorized();
+            var orderItems = await _db.Orders.FirstOrDefaultAsync(c => c.Id == OrderId && c.UserId == userId);
+            if (orderItems == null)
+                return NotFound(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status404NotFound,
+                    Message = "Cart item not found"
+                });
+            _db.Orders.Remove(orderItems);
+
+            await _db.SaveChangesAsync();
+            return Ok(new ApiResponse<bool>
+            {
+                Data = true,
+                Status = StatusCodes.Status200OK,
+                Message = "Successfully removed"
             });
         }
     }

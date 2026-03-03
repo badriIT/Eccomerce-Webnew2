@@ -204,7 +204,7 @@ namespace Eccomerce_Web.Controllers
                 {
                     Data = false,
                     Status = StatusCodes.Status404NotFound,
-                    Message = "Cart item not found"
+                    Message = "Cart not found"
                 });
             _db.CartItems.Remove(cartItem);
 

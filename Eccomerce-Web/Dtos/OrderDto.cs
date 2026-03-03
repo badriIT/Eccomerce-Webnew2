@@ -6,6 +6,6 @@ namespace Eccomerce_Web.Dtos
     {
         public int Id { get; set; }
         public string OrderNumber { get; set; }
-        public List<ForCartItems> Products { get; set; } = new();
+        public List<CartItemsForOrderDto> Products { get; set; } = new();
     }
 }

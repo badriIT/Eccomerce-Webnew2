@@ -1,4 +1,5 @@
 ﻿using Eccomerce_Web.Data;
+using Eccomerce_Web.Dtos;
 using Eccomerce_Web.Models;
 using Eccomerce_Web.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -140,6 +141,7 @@ namespace Eccomerce_Web.Controllers
                     .ThenInclude(ci => ci.Product) 
                 .FirstOrDefaultAsync(u => u.UserId == userId);
 
+
             if (userP == null)
                 return Unauthorized();
 
@@ -172,15 +174,35 @@ namespace Eccomerce_Web.Controllers
 
             }
 
-            var order = new Order
-            {
-                UserId = userP.Id,
-                OrderNumber = Guid.NewGuid().ToString("N")[..10].ToUpper(),
-                Products = userP.CartItems.ToList(),
-                User = userP.User,
-            };
+            //var order = new Order
+            //{
+            //    UserId = userP.Id,
+            //    OrderNumber = Guid.NewGuid().ToString("N")[..10].ToUpper(),
+            //    Products = userP.CartItems.ToList(),
+            //    User = userP.User,
+            //};
 
-            userP.Order ??= new List<Order>();
+            //var order = new OrderDto
+            //{
+            //    UserId = userP.Id,
+            //    OrderNumber = Guid.NewGuid().ToString("N")[..10].ToUpper(),
+            //    Products = new()
+            //    {
+            //        new CartItemsForOrderDto()
+            //        {
+            //            Product = new()
+            //            {
+            //                ForOrderProductsDto  /// amas vasworeb da sen gaagrzele me unda wavideeeeeeee!!!!!!!!!!!!!!!!!!!
+            //                {
+
+            //                }
+            //            }
+            //        }
+            //    },
+            //    User = userP.User,
+            //};
+
+            userP.Order ??= new List<Order>(); // es ar wasalo imitomaa erori rom zemot var order dastrixulia
             userP.Order.Add(order);
 
             // ??= <-- es aris 
@@ -209,22 +231,40 @@ namespace Eccomerce_Web.Controllers
 
         [HttpDelete("Order-Delete")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
-
         public async Task<IActionResult> RemoveOrder(int OrderId)
         {
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
                 return Unauthorized();
-            var orderItems = await _db.Orders.FirstOrDefaultAsync(c => c.Id == OrderId && c.UserId == userId);
-            if (orderItems == null)
+
+
+
+            //bool userExists = await _db.UserProfiles.AnyAsync(u => u.UserId == userId);
+            //if (!userExists) return Unauthorized();
+
+            var order = await _db.Orders.Include(o => o.Products).FirstOrDefaultAsync(o => o.Id == OrderId);
+
+            if (order == null)
                 return NotFound(new ApiResponse<bool>
                 {
                     Data = false,
                     Status = StatusCodes.Status404NotFound,
-                    Message = "Cart item not found"
+                    Message = "Order not found"
                 });
-            _db.Orders.Remove(orderItems);
 
+            if (order.UserId != userId)
+                return StatusCode(StatusCodes.Status403Forbidden, new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status403Forbidden,
+                    Message = "You do not have permission to delete this order"
+                });
+
+            if (order.Products != null && order.Products.Any())
+                _db.CartItems.RemoveRange(order.Products);
+
+            _db.Orders.Remove(order);
             await _db.SaveChangesAsync();
+
             return Ok(new ApiResponse<bool>
             {
                 Data = true,

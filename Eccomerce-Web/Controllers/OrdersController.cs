@@ -150,7 +150,7 @@ namespace Eccomerce_Web.Controllers
         }
         [HttpPost("Create-Order-From-Cart")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
-        public async Task<IActionResult> CreateOrderFromCart()
+        public async Task<IActionResult> CreateOrderFromCart()   ///// only this is to make work form _db finding with user iD I GOT TO GO LAST TIME 01:02 04.03.2026 thx 
         {
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
                 return Unauthorized();
@@ -217,8 +217,9 @@ namespace Eccomerce_Web.Controllers
             };
 
 
+            _db.CartItems.RemoveRange(userP.CartItems); // Remove cart items from the database
             userP.CartItems.Clear(); // Clear the cart after creating the order
-            userP.Order.Add(order); // Add the order to the user's orders
+            _db.Orders.Add(order); // Add the order to the user's orders
 
 
 

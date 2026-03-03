@@ -45,7 +45,7 @@ namespace Eccomerce_Web.Controllers
             if (userIdClaim == null || userRoleClaim == null)
                 return Unauthorized();
 
-           
+
 
 
             var user = await _db.UserProfiles
@@ -55,8 +55,11 @@ namespace Eccomerce_Web.Controllers
 
 
 
-            var cartItems = user.CartItems;
-           
+            var cartItems = await _db.CartItems
+                .Include(c => c.Product)
+                .Where(c => c.UserId == userId)
+                .ToListAsync();
+
 
 
             if (user == null) return Unauthorized();
@@ -78,7 +81,7 @@ namespace Eccomerce_Web.Controllers
                     Category = c.Product.Category,
                     CreatedAt = c.Product.CreatedAt,
                     Description = c.Product.Description,
-               
+
                 }
             }).ToList();
 
@@ -94,7 +97,7 @@ namespace Eccomerce_Web.Controllers
                 Data = cartItemsDto,
                 Status = StatusCodes.Status200OK,
                 Message = $"Cart items retrieved successfully total price: {totalPrice}",
-                
+
             });
         }
 
@@ -142,10 +145,18 @@ namespace Eccomerce_Web.Controllers
                 });
 
             // Check if product already exists in cart
-            var existingItem = user.CartItems.FirstOrDefault(c => c.ProductId == ProductId);
+            var existingItem = _db.CartItems.Include(c => c.Product).Where(c => c.UserId == userId && c.ProductId == ProductId).FirstOrDefault();
+            
 
             if (existingItem != null)
             {
+                if (existingItem.Quantity + Quantity > product.Quantity)
+                    return BadRequest(new ApiResponse<bool>                /////////// 04.03.26 00:55 need to make it work !!!! from Badri || 01:00 IT IS WORKING NICE!!!!!!!!!
+                    {   
+                        Data = false,
+                        Status = StatusCodes.Status400BadRequest,
+                        Message = "Exceeds available stock"
+                    });
                 existingItem.Quantity += Quantity;
                 await _db.SaveChangesAsync();
 
@@ -168,7 +179,7 @@ namespace Eccomerce_Web.Controllers
                 Quantity = Quantity
             };
 
-            user.CartItems.Add(cartItem);
+            _db.CartItems.Add(cartItem);
             await _db.SaveChangesAsync();
 
             // Reload with product details
@@ -188,7 +199,7 @@ namespace Eccomerce_Web.Controllers
 
 
 
-        [HttpDelete("Cart-Product-Delete")] 
+        [HttpDelete("Cart-Product-Delete")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
 
         public async Task<IActionResult> RemoveFromCart(int CartItemId)
@@ -214,12 +225,12 @@ namespace Eccomerce_Web.Controllers
             });
         }
 
-    
-
-        
 
 
-    [HttpPut("Cart-Product-Update")]
+
+
+
+        [HttpPut("Cart-Product-Update")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
 
         public async Task<IActionResult> UpdateCartItem(int CartItemId, int Quantity)
@@ -256,6 +267,42 @@ namespace Eccomerce_Web.Controllers
                 Message = "Cart item updated"
             });
         }
-    }
     
-}
+
+
+
+
+    
+    [HttpDelete("Cart-Product-Clear-whole")]
+
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
+        public async Task<IActionResult> ClearCart()
+        {
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
+                return Unauthorized();
+            var cartItems = await _db.CartItems.Where(c => c.UserId == userId).ToListAsync();
+            if (cartItems.Count == 0)
+                return NotFound(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status404NotFound,
+                    Message = "Cart is already empty"
+                });
+            _db.CartItems.RemoveRange(cartItems);
+            await _db.SaveChangesAsync();
+            return Ok(new ApiResponse<bool>
+            {
+                Data = true,
+                Status = StatusCodes.Status200OK,
+                Message = "Cart cleared successfully"
+            });
+
+        } 
+    }
+
+
+    }
+
+
+
+

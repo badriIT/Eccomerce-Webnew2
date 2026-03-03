@@ -70,7 +70,7 @@ namespace Eccomerce_Web.Controllers
                 .FirstOrDefaultAsync(u => u.UserId == userId);
 
             if (user == null)
-                return NotFound(new ApiResponse<bool>
+                return Unauthorized(new ApiResponse<bool>
                 {
                     Data = false,
                     Status = StatusCodes.Status404NotFound,
@@ -78,91 +78,102 @@ namespace Eccomerce_Web.Controllers
                 });
 
 
-
-            WholeUserProfileDto userProfileDto = new WholeUserProfileDto
+            OnlyUserInfoDto userProfileDto = new OnlyUserInfoDto
             {
-               
                 Id = user.Id,
-                UserId = user.UserId,
+              
                 Email = user.Email,
                 FullName = user.FullName,
                 PhoneNumber = user.PhoneNumber,
-                Role = user.Role,
-                CartItems = user.CartItems.Select(c => new ForCartItems
-                {
-                    SelectedQuantity = c.Quantity,
-                    CartItemIdInCart = c.Id,
-                    Product = new ForProfileProductDto
-                    {
-                        Id = c.Product.Id,
-                        Name = c.Product.Name,
-                        Price = c.Product.Price,
-                        Description = c.Product.Description,
-                        Size = c.Product.Size,
-                        Category = c.Product.Category,
-                        CreatedAt = c.Product.CreatedAt,
-                        IsFavorited = user.FavoritedProducts.Any(fp => fp.Id == c.Product.Id),
-                        Quantity = c.Product.Quantity
-
-
-
-                        
-
-
-                    }
-                }).ToList(),
-                Order = user.Order.Select(o => new ForWholeProfileOrderDto
-                {
-                    OrderNumber = o.OrderNumber,
-
-                    Products = o.Products.Select(p => new ForCartItems
-                    {
-                        
-                        SelectedQuantity = p.Quantity,
-                        Product = new ForProfileProductDto
-                        {
-                            Id = p.Product.Id,
-                            Name = p.Product.Name,
-                            Price = p.Product.Price,
-                            Description = p.Product.Description,
-                            Size = p.Product.Size,
-                            Category = p.Product.Category,
-                            CreatedAt = p.Product.CreatedAt,
-                            IsFavorited = user.FavoritedProducts.Any(fp => fp.Id == p.Product.Id),
-                            Quantity = p.Product.Quantity
-
-                        }
-                    }).ToList()
-                }).ToList(),
-
-                FavoritedProducts = user.FavoritedProducts.Select(fp => new ForProfileProductDto
-                {
-
-                    Id = fp.Id,
-                    Name = fp.Name,
-                    Price = fp.Price,
-                    Description = fp.Description,
-                    Size = fp.Size,
-                    Category = fp.Category,
-                    CreatedAt = fp.CreatedAt,
-                    IsFavorited = true, // Since these are favorited products, we can set this to true
-                    //Quantity = user.CartItems.FirstOrDefault(ci => ci.ProductId == fp.Id)?.Quantity ?? 0 // Get quantity from cart if exists
-
-                }).ToList()
-
-                
-
-               
+                Role = user.Role
             };
 
-            var TotalPrice = user.CartItems.Sum(c => c.Quantity * c.Product.Price);
 
 
-            return Ok(new ApiResponse<WholeUserProfileDto>
+            //WholeUserProfileDto userProfileDto = new WholeUserProfileDto
+            //{
+
+            //    Id = user.Id,
+            //    UserId = user.UserId,
+            //    Email = user.Email,
+            //    FullName = user.FullName,
+            //    PhoneNumber = user.PhoneNumber,
+            //    Role = user.Role,
+            //    CartItems = user.CartItems.Select(c => new ForCartItems
+            //    {
+            //        SelectedQuantity = c.Quantity,
+            //        CartItemIdInCart = c.Id,
+            //        Product = new ForProfileProductDto
+            //        {
+            //            Id = c.Product.Id,
+            //            Name = c.Product.Name,
+            //            Price = c.Product.Price,
+            //            Description = c.Product.Description,
+            //            Size = c.Product.Size,
+            //            Category = c.Product.Category,
+            //            CreatedAt = c.Product.CreatedAt,
+            //            IsFavorited = user.FavoritedProducts.Any(fp => fp.Id == c.Product.Id),
+            //            Quantity = c.Product.Quantity
+
+
+
+
+
+
+            //        }
+            //    }).ToList(),
+            //    Order = user.Order.Select(o => new ForWholeProfileOrderDto
+            //    {
+            //        OrderNumber = o.OrderNumber,
+
+            //        Products = o.Products.Select(p => new ForCartItems
+            //        {
+
+            //            SelectedQuantity = p.Quantity,
+            //            Product = new ForProfileProductDto
+            //            {
+            //                Id = p.Product.Id,
+            //                Name = p.Product.Name,
+            //                Price = p.Product.Price,
+            //                Description = p.Product.Description,
+            //                Size = p.Product.Size,
+            //                Category = p.Product.Category,
+            //                CreatedAt = p.Product.CreatedAt,
+            //                IsFavorited = user.FavoritedProducts.Any(fp => fp.Id == p.Product.Id),
+            //                Quantity = p.Product.Quantity
+
+            //            }
+            //        }).ToList()
+            //    }).ToList(),
+
+            //    FavoritedProducts = user.FavoritedProducts.Select(fp => new ForProfileProductDto
+            //    {
+
+            //        Id = fp.Id,
+            //        Name = fp.Name,
+            //        Price = fp.Price,
+            //        Description = fp.Description,
+            //        Size = fp.Size,
+            //        Category = fp.Category,
+            //        CreatedAt = fp.CreatedAt,
+            //        IsFavorited = true, // Since these are favorited products, we can set this to true
+            //        //Quantity = user.CartItems.FirstOrDefault(ci => ci.ProductId == fp.Id)?.Quantity ?? 0 // Get quantity from cart if exists
+
+            //    }).ToList()
+
+
+
+
+            //};
+
+            //var TotalPrice = user.CartItems.Sum(c => c.Quantity * c.Product.Price);
+
+
+            return Ok(new ApiResponse<OnlyUserInfoDto>
             {
                 Data = userProfileDto, 
                 Status = StatusCodes.Status200OK,
-                Message = $"Total Price is {TotalPrice}" /////// display: flex; 
+                Message = "" /////// display: flex; 
             });
         }
 

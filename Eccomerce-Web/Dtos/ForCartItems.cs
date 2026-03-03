@@ -8,5 +8,7 @@
            public ForProfileProductDto Product { get; set; }
 
            
+
+
     }
 }

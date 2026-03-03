@@ -2,6 +2,7 @@
 
 using System.Security.Claims;
 using Eccomerce_Web.Data;
+using Eccomerce_Web.Dtos;
 using Eccomerce_Web.Models;
 using Eccomerce_Web.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -25,6 +26,92 @@ namespace Eccomerce_Web.Controllers
             _db = db;
             _IJWTService = jw;
         }
+
+
+
+
+        [HttpGet("Cart-Products")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
+
+        public async Task<IActionResult> GetCartItems()
+        {
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
+                return Unauthorized();
+
+
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            var userRoleClaim = User.FindFirst(ClaimTypes.Role);
+
+            if (userIdClaim == null || userRoleClaim == null)
+                return Unauthorized();
+
+           
+
+
+            var user = await _db.UserProfiles
+                .Include(u => u.CartItems)
+                .ThenInclude(c => c.Product)
+                .FirstOrDefaultAsync(u => u.UserId == userId);
+
+
+
+            var cartItems = await _db.CartItems
+                .Where(c => c.UserId == userId)
+                .Include(c => c.Product)
+                .ToListAsync();
+           
+
+
+            if (user == null) return Unauthorized();
+
+
+
+
+            var cartItemsDto = cartItems.Select(c => new ForCartItems
+            {
+                CartItemIdInCart = c.Id,
+                SelectedQuantity = c.Quantity,
+                Product = new ForProfileProductDto
+                {
+                    Id = c.Product.Id,
+                    Name = c.Product.Name,
+                    Size = c.Product.Size,
+                    Price = c.Product.Price,
+                    Quantity = c.Product.Quantity,
+                    Category = c.Product.Category,
+                    CreatedAt = c.Product.CreatedAt,
+                    Description = c.Product.Description,
+               
+                }
+            }).ToList();
+
+            double totalPrice = cartItemsDto.Sum(item => item.SelectedQuantity * item.Product.Price);
+
+
+
+
+
+
+            return Ok(new ApiResponse<List<ForCartItems>>
+            {
+                Data = cartItemsDto,
+                Status = StatusCodes.Status200OK,
+                Message = $"Cart items retrieved successfully total price: {totalPrice}",
+                
+            });
+        }
+
+
+
+
+
+
+
+
+
+
+
+
 
         [HttpPost("Cart-Product-Add")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
@@ -104,7 +191,7 @@ namespace Eccomerce_Web.Controllers
 
 
 
-        [HttpDelete("Cart-Product-Delete")]
+        [HttpDelete("Cart-Product-Delete")] 
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
 
         public async Task<IActionResult> RemoveFromCart(int CartItemId)
@@ -120,6 +207,7 @@ namespace Eccomerce_Web.Controllers
                     Message = "Cart item not found"
                 });
             _db.CartItems.Remove(cartItem);
+
             await _db.SaveChangesAsync();
             return Ok(new ApiResponse<bool>
             {

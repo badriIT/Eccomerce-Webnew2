@@ -29,7 +29,6 @@ builder.Services.AddCors(options =>
     });
 });
 
-
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
     options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters

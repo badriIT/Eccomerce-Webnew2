@@ -32,9 +32,11 @@ namespace Eccomerce_Web.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
         public async Task<IActionResult> CreateSingleItemOrder(int Pid, int Quantity)
         {
+            // 1️⃣ Get user id from token
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
                 return Unauthorized();
 
+            // 2️⃣ Validate quantity
             if (Quantity <= 0)
                 return BadRequest(new ApiResponse<bool>
                 {
@@ -43,20 +45,9 @@ namespace Eccomerce_Web.Controllers
                     Message = "Quantity must be greater than zero"
                 });
 
-            bool userExists = await _db.UserProfiles.AnyAsync(u => u.UserId == userId);
-             if (!userExists) return Unauthorized();
-
-
-             
-
-            //var user = await _db.UserProfiles
-            //    .Include(u => u.Order)
-            //    .ThenInclude(p => p.Products)
-            //    .FirstOrDefaultAsync(u => u.Id == userId);
-
-            //if (user == null) return Unauthorized();
-
+            // 3️⃣ Check product
             var product = await _db.Products.FirstOrDefaultAsync(p => p.Id == Pid);
+
             if (product == null)
                 return NotFound(new ApiResponse<bool>
                 {
@@ -65,6 +56,7 @@ namespace Eccomerce_Web.Controllers
                     Message = "Product not found"
                 });
 
+            // 4️⃣ Check stock
             if (Quantity > product.Quantity)
                 return BadRequest(new ApiResponse<bool>
                 {
@@ -73,32 +65,36 @@ namespace Eccomerce_Web.Controllers
                     Message = "Not enough stock"
                 });
 
-            //product.Quantity -= Quantity; <---- not here should be when buying the order not when creating it
+            // 5️⃣ Create new order (ALWAYS NEW)
             var order = new Order
             {
                 UserId = userId,
                 OrderNumber = Guid.NewGuid().ToString("N")[..10].ToUpper(),
-                Products = new List<CartItem> // HERE IS ALSO SMALL ERROR
+                Products = new List<CartItem>
+        {
+            new CartItem
             {
-                new CartItem
-                {
-                    UserId = userId,  // ← still missing this  //HERE
-                    ProductId = Pid,
-                    Quantity = Quantity
-                }
+                UserId = userId,
+                ProductId = Pid,
+                Quantity = Quantity
             }
+        }
             };
 
-            _db.Orders.Add(order); // <--- error it must be added to users Orders not to the Orders table directly because of the relationship dd
+            // 6️⃣ Save directly to Orders table
+            _db.Orders.Add(order); // and like here update 00:17 04.03.2026 shit
+
             await _db.SaveChangesAsync();
 
-            var addedItem = await _db.Orders
-                .Include(c => c.Products)
-                .FirstOrDefaultAsync(c => c.Id == order.Id);
+            // 7️⃣ Reload with product info (optional but clean)
+            var createdOrder = await _db.Orders
+                .Include(o => o.Products)
+                    .ThenInclude(ci => ci.Product)
+                .FirstOrDefaultAsync(o => o.Id == order.Id);
 
             return Ok(new ApiResponse<Order>
             {
-                Data = order,  // ← return addedItem, not order
+                Data = createdOrder,
                 Status = StatusCodes.Status200OK,
                 Message = "Order created successfully"
             });
@@ -112,23 +108,46 @@ namespace Eccomerce_Web.Controllers
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
                 return Unauthorized();
 
-            bool userExists = await _db.UserProfiles.AnyAsync(u => u.UserId == userId);
-            if (!userExists) return Unauthorized();
-
-            var orders = await _db.Orders
+            var orders = await _db.Orders     /// here 
                 .Where(o => o.UserId == userId)
                 .Include(o => o.Products)
                     .ThenInclude(ci => ci.Product)
                 .ToListAsync();
 
-            return Ok(new ApiResponse<List<Order>>
+            if (!orders.Any())
+                return Ok(new ApiResponse<List<OrderDto>>
+                {
+                    Data = new List<OrderDto>(),
+                    Status = StatusCodes.Status200OK,
+                    Message = "No orders found"
+                });
+
+            var ordersDto = orders.Select(o => new OrderDto
             {
-                Data = orders,
+                Id = o.Id,
+                OrderNumber = o.OrderNumber,
+                Products = o.Products.Select(ci => new CartItemsForOrderDto
+                {
+                    CartItemIdInCart = ci.Id,
+                    SelectedQuantity = ci.Quantity,           //////////// like tthis
+                    Product = new ForOrderProductsDto
+                    {
+                        Id = ci.Product.Id,
+                        Name = ci.Product.Name,
+                        Description = ci.Product.Description,
+                        Price = ci.Product.Price,
+                        Quantity = ci.Quantity
+                    }
+                }).ToList()
+            }).ToList();
+
+            return Ok(new ApiResponse<List<OrderDto>>
+            {
+                Data = ordersDto,
                 Status = StatusCodes.Status200OK,
                 Message = "Orders retrieved successfully"
             });
         }
-
         [HttpPost("Create-Order-From-Cart")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
         public async Task<IActionResult> CreateOrderFromCart()
@@ -138,7 +157,7 @@ namespace Eccomerce_Web.Controllers
 
             var userP = await _db.UserProfiles
                 .Include(u => u.CartItems)
-                    .ThenInclude(ci => ci.Product) 
+                    .ThenInclude(ci => ci.Product)
                 .FirstOrDefaultAsync(u => u.UserId == userId);
 
 
@@ -172,19 +191,50 @@ namespace Eccomerce_Web.Controllers
                     });
 
 
+
+
+
+
+
+
+
             }
 
-            //var order = new Order
-            //{
-            //    UserId = userP.Id,
-            //    OrderNumber = Guid.NewGuid().ToString("N")[..10].ToUpper(),
-            //    Products = userP.CartItems.ToList(),
-            //    User = userP.User,
-            //};
+
+
+
+
+            Order order = new Order
+            {
+                UserId = userP.UserId,
+                OrderNumber = Guid.NewGuid().ToString("N")[..10].ToUpper(),
+                Products = userP.CartItems.Select(ci => new CartItem
+                {
+                    UserId = userP.UserId,
+                    ProductId = ci.ProductId,
+                    Quantity = ci.Quantity
+                }).ToList()
+            };
+
+
+            userP.CartItems.Clear(); // Clear the cart after creating the order
+            userP.Order.Add(order); // Add the order to the user's orders
+
+
+
+
+
+            ////var order = new Order
+            ////{
+            ////    UserId = userP.Id,
+            ////    OrderNumber = Guid.NewGuid().ToString("N")[..10].ToUpper(),
+            ////    Products = userP.CartItems.ToList(),
+            ////    User = userP.User,
+            ////};
 
             //var order = new OrderDto
             //{
-            //    UserId = userP.Id,
+
             //    OrderNumber = Guid.NewGuid().ToString("N")[..10].ToUpper(),
             //    Products = new()
             //    {
@@ -202,26 +252,37 @@ namespace Eccomerce_Web.Controllers
             //    User = userP.User,
             //};
 
-            userP.Order ??= new List<Order>(); // es ar wasalo imitomaa erori rom zemot var order dastrixulia
-            userP.Order.Add(order);
+            //userP.Order ??= new List<Order>(); // es ar wasalo imitomaa erori rom zemot var order dastrixulia
+            //userP.Order.Add(order);
 
-            // ??= <-- es aris 
-            //if (variable == null)
-            //{
-            //    variable = value;
-            //} ase amowmebs ra
+            //// ??= <-- es aris 
+            ////if (variable == null)
+            ////{
+            ////    variable = value;
+            ////} ase amowmebs ra
 
 
             await _db.SaveChangesAsync();
 
-            var addedOrder = await _db.Orders
+            var AddedOrders = await _db.Orders
+                .Where(o => o.UserId == userId)
                 .Include(o => o.Products)
                     .ThenInclude(ci => ci.Product)
-                .FirstOrDefaultAsync(o => o.Id == order.Id);
+                .ToListAsync();
 
-            return Ok(new ApiResponse<Order>
+            if (AddedOrders == null || !AddedOrders.Any())
+                return NotFound(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status404NotFound,
+                    Message = "No orders found after creation"
+                });
+
+
+
+            return Ok(new ApiResponse<List<Order>>
             {
-                Data = addedOrder, // ← return the re-fetched entity, not the local variable
+                Data = AddedOrders, // ← return the re-fetched entity, not the local variable
                 Status = StatusCodes.Status200OK,
                 Message = "Order created successfully"
             });
@@ -239,7 +300,7 @@ namespace Eccomerce_Web.Controllers
 
 
             //bool userExists = await _db.UserProfiles.AnyAsync(u => u.UserId == userId);
-            //if (!userExists) return Unauthorized();
+            //if (!userExists) return Unauthorized();f
 
             var order = await _db.Orders.Include(o => o.Products).FirstOrDefaultAsync(o => o.Id == OrderId);
 

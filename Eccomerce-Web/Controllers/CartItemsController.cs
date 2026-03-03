@@ -55,10 +55,7 @@ namespace Eccomerce_Web.Controllers
 
 
 
-            var cartItems = await _db.CartItems
-                .Where(c => c.UserId == userId)
-                .Include(c => c.Product)
-                .ToListAsync();
+            var cartItems = user.CartItems;
            
 
 

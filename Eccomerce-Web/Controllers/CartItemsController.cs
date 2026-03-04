@@ -232,7 +232,6 @@ namespace Eccomerce_Web.Controllers
 
         [HttpPut("Cart-Product-Update")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
-
         public async Task<IActionResult> UpdateCartItem(int CartItemId, int Quantity)
         {
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))

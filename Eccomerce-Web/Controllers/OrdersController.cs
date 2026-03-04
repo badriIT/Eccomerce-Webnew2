@@ -45,7 +45,7 @@ namespace Eccomerce_Web.Controllers
             if (Quantity > product.Quantity)
                 return BadRequest("Not enough stock");
 
-            
+
 
             var order = new Order
             {
@@ -87,7 +87,7 @@ namespace Eccomerce_Web.Controllers
                         Category = oi.Product.Category,
                         CreatedAt = oi.Product.CreatedAt,
                         Description = oi.Product.Description,
-                       
+
                     }
                 }).ToList()
             };
@@ -140,7 +140,7 @@ namespace Eccomerce_Web.Controllers
                         Size = ci.Product.Size,
                         Category = ci.Product.Category,
                         CreatedAt = ci.Product.CreatedAt,
-                        
+
 
                     }
                 }).ToList()
@@ -189,7 +189,7 @@ namespace Eccomerce_Web.Controllers
 
             foreach (var item in cartItems)
             {
-               
+
 
                 order.Products.Add(new OrderItem
                 {
@@ -260,6 +260,132 @@ namespace Eccomerce_Web.Controllers
 
             return Ok("Order deleted successfully");
         }
+
+
+        [HttpPut("Order-Update")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
+        public async Task<IActionResult> OrderUpdate(int OrderId, int OrdersProductsId, int Quantity)
+        {
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
+                return Unauthorized();
+
+            var order = await _db.Orders
+                .Include(c => c.Products)
+                    .ThenInclude(u => u.Product)
+                .FirstOrDefaultAsync(c => c.Id == OrderId && c.UserId == userId);
+
+            if (order == null)
+                return NotFound(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status404NotFound,
+                    Message = "Order not found"
+                });
+
+            var orderItem = order.Products.FirstOrDefault(u => u.Product.Id == OrdersProductsId);
+
+            if (orderItem == null)
+                return NotFound(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status404NotFound,
+                    Message = "Product not found in order"
+                });
+
+            if (Quantity <= 0 || Quantity > orderItem.Product.Quantity)
+                return BadRequest(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status400BadRequest,
+                    Message = "Invalid quantity"
+                });
+
+            orderItem.Quantity = Quantity;
+
+            await _db.SaveChangesAsync();
+
+            
+
+            return Ok(new ApiResponse<Order>
+            {
+                Data = null,
+                Status = StatusCodes.Status200OK,
+                Message = "Order updated"
+            });
+        }
+
+
+
+
+        //    [HttpPut("Order-Update")]
+        //    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
+        //    public async Task<IActionResult> OrderUpdate(int OrderId, int OrdersProductsId, int Quantity)
+        //    {
+        //        if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
+        //            return Unauthorized();
+
+        //        // FIX 1: Use ThenInclude instead of .Select() inside Include
+        //        var order = await _db.Orders
+        //            .Include(c => c.Products)
+        //                .ThenInclude(u => u.Product)
+        //            .FirstOrDefaultAsync(c => c.Id == OrderId && c.UserId == userId);
+
+        //        var OrdersProducts = order.Products.Select(p => p.Product.Id == OrdersProductsId);
+
+
+        //        //var user = await _db.UserProfiles.FirstOrDefaultAsync(o => o.UserId == userId);
+
+
+
+
+        //        if (order == null)
+        //        {
+        //            return NotFound(new ApiResponse<bool>
+        //            {
+        //                Data = false,
+        //                Status = StatusCodes.Status404NotFound,
+        //                Message = "Order not found"
+        //            });
+        //        }
+
+        //        if (!OrdersProducts.Any())
+        //        {
+        //            return NotFound(new ApiResponse<bool>
+        //            {
+        //                Data = false,
+        //                Status = StatusCodes.Status404NotFound,
+        //                Message = "Products Id not found"
+        //            });
+        //        }
+
+        //        if (order.Products.Any(u => u.Product.Quantity <= 0))
+        //        {
+        //            return BadRequest(new ApiResponse<bool>
+        //            {
+        //                Data = false,
+        //                Status = StatusCodes.Status400BadRequest,
+        //                Message = "Invalid quantity"
+        //            });
+        //        }
+
+        //        //order.Products.ForEach(o => o.Quantity = Quantity);
+
+        //        var updateOrderDto = new CartItemsForOrderDto()
+        //        {
+        //            SelectedQuantity = Quantity
+        //        };
+
+
+        //        await _db.SaveChangesAsync();
+
+        //        return Ok(new ApiResponse<Order>
+        //        {
+        //            Data = order,
+        //            Status = StatusCodes.Status200OK,
+        //            Message = "Order updated"
+        //        });
+        //    }
+        //}
     }
 }
 

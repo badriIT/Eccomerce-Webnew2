@@ -75,7 +75,7 @@ namespace Eccomerce_Web.Controllers
                 OrderNumber = createdOrder.OrderNumber,
                 Products = createdOrder.Products.Select(oi => new CartItemsForOrderDto
                 {
-                    CartItemIdInCart = oi.Id,
+                    ChoosedProductId = oi.Id,
                     SelectedQuantity = oi.Quantity,
                     Product = new ForOrderProductsDto
                     {
@@ -128,7 +128,7 @@ namespace Eccomerce_Web.Controllers
                 OrderNumber = o.OrderNumber,
                 Products = o.Products.Select(ci => new CartItemsForOrderDto
                 {
-                    CartItemIdInCart = ci.Id,
+                    ChoosedProductId = ci.Id,
                     SelectedQuantity = ci.Quantity,           //////////// like tthis
                     Product = new ForOrderProductsDto
                     {
@@ -214,7 +214,7 @@ namespace Eccomerce_Web.Controllers
                 OrderNumber = createdOrder.OrderNumber,
                 Products = createdOrder.Products.Select(oi => new CartItemsForOrderDto
                 {
-                    CartItemIdInCart = oi.Id,
+                    ChoosedProductId = oi.Id,
                     SelectedQuantity = oi.Quantity,
                     Product = new ForOrderProductsDto
                     {
@@ -262,7 +262,7 @@ namespace Eccomerce_Web.Controllers
         }
 
 
-        [HttpPut("Order-Update")]
+        [HttpPut("Order-Update")]  // From Badri (need to fix it in create order from cart it is not working says 404 not found product.)
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
         public async Task<IActionResult> OrderUpdate(int OrderId, int OrdersProductsId, int Quantity)
         {

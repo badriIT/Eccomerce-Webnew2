@@ -5,7 +5,7 @@ namespace Eccomerce_Web.Dtos
     public class CartItemsForOrderDto
     {
 
-        public int CartItemIdInCart { get; set; }
+        public int ChoosedProductId { get; set; }
         public int SelectedQuantity { get; set; }
 
         public ForOrderProductsDto Product { get; set; }

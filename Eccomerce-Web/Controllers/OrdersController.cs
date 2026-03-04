@@ -27,74 +27,74 @@ namespace Eccomerce_Web.Controllers
 
 
 
-
         [HttpPost("Post-Order")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
         public async Task<IActionResult> CreateSingleItemOrder(int Pid, int Quantity)
         {
-            // 1️⃣ Get user id from token
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
                 return Unauthorized();
 
-            // 2️⃣ Validate quantity
             if (Quantity <= 0)
-                return BadRequest(new ApiResponse<bool>
-                {
-                    Data = false,
-                    Status = StatusCodes.Status400BadRequest,
-                    Message = "Quantity must be greater than zero"
-                });
+                return BadRequest("Quantity must be greater than zero");
 
-            // 3️⃣ Check product
             var product = await _db.Products.FirstOrDefaultAsync(p => p.Id == Pid);
 
             if (product == null)
-                return NotFound(new ApiResponse<bool>
-                {
-                    Data = false,
-                    Status = StatusCodes.Status404NotFound,
-                    Message = "Product not found"
-                });
+                return NotFound("Product not found");
 
-            // 4️⃣ Check stock
             if (Quantity > product.Quantity)
-                return BadRequest(new ApiResponse<bool>
-                {
-                    Data = false,
-                    Status = StatusCodes.Status400BadRequest,
-                    Message = "Not enough stock"
-                });
+                return BadRequest("Not enough stock");
 
-            // 5️⃣ Create new order (ALWAYS NEW)
+            
+
             var order = new Order
             {
                 UserId = userId,
                 OrderNumber = Guid.NewGuid().ToString("N")[..10].ToUpper(),
-                Products = new List<CartItem>
+                Products = new List<OrderItem>
         {
-            new CartItem
+            new OrderItem
             {
-                UserId = userId,
                 ProductId = Pid,
                 Quantity = Quantity
             }
         }
             };
 
-            // 6️⃣ Save directly to Orders table
-            _db.Orders.Add(order); // and like here update 00:17 04.03.2026 shit
-
+            _db.Orders.Add(order);
             await _db.SaveChangesAsync();
 
-            // 7️⃣ Reload with product info (optional but clean)
             var createdOrder = await _db.Orders
                 .Include(o => o.Products)
-                    .ThenInclude(ci => ci.Product)
+                    .ThenInclude(oi => oi.Product)
                 .FirstOrDefaultAsync(o => o.Id == order.Id);
 
-            return Ok(new ApiResponse<Order>
+            var orderDto = new OrderDto
             {
-                Data = createdOrder,
+                Id = createdOrder.Id,
+                OrderNumber = createdOrder.OrderNumber,
+                Products = createdOrder.Products.Select(oi => new CartItemsForOrderDto
+                {
+                    CartItemIdInCart = oi.Id,
+                    SelectedQuantity = oi.Quantity,
+                    Product = new ForOrderProductsDto
+                    {
+                        Id = oi.Product.Id,
+                        Name = oi.Product.Name,
+                        Size = oi.Product.Size,
+                        Price = oi.Product.Price,
+                        Quantity = oi.Quantity,
+                        Category = oi.Product.Category,
+                        CreatedAt = oi.Product.CreatedAt,
+                        Description = oi.Product.Description,
+                       
+                    }
+                }).ToList()
+            };
+
+            return Ok(new ApiResponse<OrderDto>
+            {
+                Data = orderDto,
                 Status = StatusCodes.Status200OK,
                 Message = "Order created successfully"
             });
@@ -136,7 +136,12 @@ namespace Eccomerce_Web.Controllers
                         Name = ci.Product.Name,
                         Description = ci.Product.Description,
                         Price = ci.Product.Price,
-                        Quantity = ci.Quantity
+                        Quantity = ci.Product.Quantity,
+                        Size = ci.Product.Size,
+                        Category = ci.Product.Category,
+                        CreatedAt = ci.Product.CreatedAt,
+                        
+
                     }
                 }).ToList()
             }).ToList();
@@ -150,140 +155,85 @@ namespace Eccomerce_Web.Controllers
         }
         [HttpPost("Create-Order-From-Cart")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
-        public async Task<IActionResult> CreateOrderFromCart()   ///// only this is to make work form _db finding with user iD I GOT TO GO LAST TIME 01:02 04.03.2026 thx 
+        public async Task<IActionResult> CreateOrderFromCart()
         {
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
                 return Unauthorized();
 
-            var userP = await _db.UserProfiles
-                .Include(u => u.CartItems)
-                    .ThenInclude(ci => ci.Product)
-                .FirstOrDefaultAsync(u => u.UserId == userId);
+            var cartItems = await _db.CartItems
+                .Where(ci => ci.UserId == userId)
+                .Include(ci => ci.Product)
+                .ToListAsync();
 
+            if (!cartItems.Any())
+                return BadRequest("Cart is empty");
 
-            if (userP == null)
-                return Unauthorized();
-
-            if (userP.CartItems == null || !userP.CartItems.Any())
-                return NotFound(new ApiResponse<bool>
-                {
-                    Data = false,
-                    Status = StatusCodes.Status404NotFound,
-                    Message = "Cart is empty"
-                });
-
-            foreach (var cartItem in userP.CartItems)
+            foreach (var item in cartItems)
             {
-                if (cartItem.Product == null)
-                    return BadRequest(new ApiResponse<bool>
-                    {
-                        Data = false,
-                        Status = StatusCodes.Status400BadRequest,
-                        Message = $"Product not found for cart item {cartItem.Id}"
-                    });
+                if (item.Product == null)
+                    return BadRequest($"Product not found for cart item {item.Id}");
 
-                if (cartItem.Quantity <= 0)
-                    return BadRequest(new ApiResponse<bool>
-                    {
-                        Data = false,
-                        Status = StatusCodes.Status400BadRequest,
-                        Message = $"Invalid quantity for product: {cartItem.Product.Name}"
-                    });
+                if (item.Quantity <= 0)
+                    return BadRequest($"Invalid quantity for {item.Product.Name}");
 
-
-
-
-
-
-
-
-
+                if (item.Quantity > item.Product.Quantity)
+                    return BadRequest($"Not enough stock for {item.Product.Name}");
             }
 
-
-
-
-
-            Order order = new Order
+            var order = new Order
             {
-                UserId = userP.UserId,
+                UserId = userId,
                 OrderNumber = Guid.NewGuid().ToString("N")[..10].ToUpper(),
-                Products = userP.CartItems.Select(ci => new CartItem
-                {
-                    UserId = userP.UserId,
-                    ProductId = ci.ProductId,
-                    Quantity = ci.Quantity
-                }).ToList()
+                Products = new List<OrderItem>()
             };
 
+            foreach (var item in cartItems)
+            {
+               
 
-            _db.CartItems.RemoveRange(userP.CartItems); // Remove cart items from the database
-            userP.CartItems.Clear(); // Clear the cart after creating the order
-            _db.Orders.Add(order); // Add the order to the user's orders
+                order.Products.Add(new OrderItem
+                {
+                    ProductId = item.ProductId,
+                    Quantity = item.Quantity
+                });
+            }
 
-
-
-
-
-            ////var order = new Order
-            ////{
-            ////    UserId = userP.Id,
-            ////    OrderNumber = Guid.NewGuid().ToString("N")[..10].ToUpper(),
-            ////    Products = userP.CartItems.ToList(),
-            ////    User = userP.User,
-            ////};
-
-            //var order = new OrderDto
-            //{
-
-            //    OrderNumber = Guid.NewGuid().ToString("N")[..10].ToUpper(),
-            //    Products = new()
-            //    {
-            //        new CartItemsForOrderDto()
-            //        {
-            //            Product = new()
-            //            {
-            //                ForOrderProductsDto  /// amas vasworeb da sen gaagrzele me unda wavideeeeeeee!!!!!!!!!!!!!!!!!!!
-            //                {
-
-            //                }
-            //            }
-            //        }
-            //    },
-            //    User = userP.User,
-            //};
-
-            //userP.Order ??= new List<Order>(); // es ar wasalo imitomaa erori rom zemot var order dastrixulia
-            //userP.Order.Add(order);
-
-            //// ??= <-- es aris 
-            ////if (variable == null)
-            ////{
-            ////    variable = value;
-            ////} ase amowmebs ra
-
+            _db.Orders.Add(order);
+            _db.CartItems.RemoveRange(cartItems);
 
             await _db.SaveChangesAsync();
 
-            var AddedOrders = await _db.Orders
-                .Where(o => o.UserId == userId)
+            var createdOrder = await _db.Orders
                 .Include(o => o.Products)
-                    .ThenInclude(ci => ci.Product)
-                .ToListAsync();
+                    .ThenInclude(oi => oi.Product)
+                .FirstOrDefaultAsync(o => o.Id == order.Id);
 
-            if (AddedOrders == null || !AddedOrders.Any())
-                return NotFound(new ApiResponse<bool>
-                {
-                    Data = false,
-                    Status = StatusCodes.Status404NotFound,
-                    Message = "No orders found after creation"
-                });
-
-
-
-            return Ok(new ApiResponse<List<Order>>
+            var orderDto = new OrderDto
             {
-                Data = AddedOrders, // ← return the re-fetched entity, not the local variable
+                Id = createdOrder.Id,
+                OrderNumber = createdOrder.OrderNumber,
+                Products = createdOrder.Products.Select(oi => new CartItemsForOrderDto
+                {
+                    CartItemIdInCart = oi.Id,
+                    SelectedQuantity = oi.Quantity,
+                    Product = new ForOrderProductsDto
+                    {
+                        Id = oi.Product.Id,
+                        Name = oi.Product.Name,
+                        Size = oi.Product.Size,
+                        Price = oi.Product.Price,
+                        Quantity = oi.Quantity,
+                        Category = oi.Product.Category,
+                        CreatedAt = oi.Product.CreatedAt,
+                        Description = oi.Product.Description,
+                        IsFavorited = false
+                    }
+                }).ToList()
+            };
+
+            return Ok(new ApiResponse<OrderDto>
+            {
+                Data = orderDto,
                 Status = StatusCodes.Status200OK,
                 Message = "Order created successfully"
             });
@@ -298,41 +248,17 @@ namespace Eccomerce_Web.Controllers
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
                 return Unauthorized();
 
-
-
-            //bool userExists = await _db.UserProfiles.AnyAsync(u => u.UserId == userId);
-            //if (!userExists) return Unauthorized();f
-
-            var order = await _db.Orders.Include(o => o.Products).FirstOrDefaultAsync(o => o.Id == OrderId);
+            var order = await _db.Orders
+                .Include(o => o.Products)
+                .FirstOrDefaultAsync(o => o.Id == OrderId && o.UserId == userId);
 
             if (order == null)
-                return NotFound(new ApiResponse<bool>
-                {
-                    Data = false,
-                    Status = StatusCodes.Status404NotFound,
-                    Message = "Order not found"
-                });
-
-            if (order.UserId != userId)
-                return StatusCode(StatusCodes.Status403Forbidden, new ApiResponse<bool>
-                {
-                    Data = false,
-                    Status = StatusCodes.Status403Forbidden,
-                    Message = "You do not have permission to delete this order"
-                });
-
-            if (order.Products != null && order.Products.Any())
-                _db.CartItems.RemoveRange(order.Products);
+                return NotFound("Order not found");
 
             _db.Orders.Remove(order);
             await _db.SaveChangesAsync();
 
-            return Ok(new ApiResponse<bool>
-            {
-                Data = true,
-                Status = StatusCodes.Status200OK,
-                Message = "Successfully removed"
-            });
+            return Ok("Order deleted successfully");
         }
     }
 }

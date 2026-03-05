@@ -30,17 +30,32 @@ namespace Eccomerce_Web.Controllers
         public async Task<IActionResult> Buy(string Onumber)
         {
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
-                return Unauthorized();
+                return Unauthorized(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status401Unauthorized,
+                    Message = "Error Finding User!"
+                });
 
             var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId);
 
             if (user == null)
-                return Unauthorized();
+                return Unauthorized(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status401Unauthorized,
+                    Message = "Error Finding User!"
+                });
 
             var order = await _db.Orders.FirstOrDefaultAsync(o => o.OrderNumber == Onumber);
 
             if (order == null)
-                return NotFound("Order not found");
+                return NotFound(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status401Unauthorized,
+                    Message = "Order not found"
+                });
 
             if (order.UserId != userId)
                 return Forbid();
@@ -51,15 +66,30 @@ namespace Eccomerce_Web.Controllers
                 .ToListAsync();
 
             if (!orderItems.Any())
-                return NotFound("Order has no products");
+                return NotFound(new ApiResponse<Order>
+                {
+                    Data = order,
+                    Status = StatusCodes.Status401Unauthorized,
+                    Message = "Order has no products"
+                });
 
             foreach (var item in orderItems)
             {
                 if (item.Product == null)
-                    return NotFound($"Product not found for order item {item.Id}");
+                    return NotFound(new ApiResponse<bool>
+                    {
+                        Data = false,
+                        Status = StatusCodes.Status400BadRequest,
+                        Message = $"Product not found for order item {item.Id}"
+                    });
 
                 if (item.Product.Quantity < item.Quantity)
-                    return BadRequest($"Not enough stock for {item.Product.Name}");
+                    return BadRequest(new ApiResponse<bool>
+                    {
+                        Data = false,
+                        Status = StatusCodes.Status400BadRequest,
+                        Message = $"Not enough stock for {item.Product.Name}"
+                    });
 
                 item.Product.Quantity -= item.Quantity;
             }

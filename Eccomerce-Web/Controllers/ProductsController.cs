@@ -41,7 +41,12 @@ namespace Eccomerce_Web.Controllers
             }
 
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                return BadRequest(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status400BadRequest,
+                    Message = "Models State is not valid!"
+                });
 
 
             Product newProduct = new()
@@ -159,7 +164,6 @@ namespace Eccomerce_Web.Controllers
         }
 
         [HttpPut("update-product/{id}")]
-
         public async Task<IActionResult> UpdateProductById(int id, ProductDto updatedProduct)
         {
             var product = await _Db.Products.FindAsync(id);
@@ -200,6 +204,52 @@ namespace Eccomerce_Web.Controllers
 
         
            
+
+
+            return Ok(ApiResOk);
+        }
+
+
+        [HttpPut("update-product-quantity/{id}")]
+        public async Task<IActionResult> UpdateProductsQuantity(int id, int Quantity)
+        {
+            var product = await _Db.Products.FindAsync(id);
+            if (product == null)
+            {
+
+
+                ApiResponse<bool> response = new()
+                {
+                    Data = false,
+                    Status = StatusCodes.Status404NotFound,
+                    Message = "Product not Found"
+                };
+
+
+                return NotFound(response);
+            }
+            if (!ModelState.IsValid)
+                return BadRequest(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status400BadRequest,
+                    Message = "Model State is not Valid"
+                });
+
+            product.Quantity = Quantity;
+
+            await _Db.SaveChangesAsync();
+
+
+            ApiResponse<Product> ApiResOk = new()
+            {
+                Data = product,
+                Status = StatusCodes.Status200OK,
+                Message = "Product Updated"
+            };
+
+
+
 
 
             return Ok(ApiResOk);

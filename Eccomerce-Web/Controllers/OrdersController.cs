@@ -31,18 +31,38 @@ namespace Eccomerce_Web.Controllers
         public async Task<IActionResult> CreateSingleItemOrder(int Pid, int Quantity)
         {
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
-                return Unauthorized();
+                return Unauthorized(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status401Unauthorized,
+                    Message = "Error Finding User!"
+                });
 
             if (Quantity <= 0)
-                return BadRequest("Quantity must be greater than zero");
+                return BadRequest(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status400BadRequest,
+                    Message = "Quantity must be greater than zero"
+                });
 
             var product = await _db.Products.FirstOrDefaultAsync(p => p.Id == Pid);
 
             if (product == null)
-                return NotFound("Product not found");
+                return NotFound(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status404NotFound,
+                    Message = "Product not found"
+                });
 
             if (Quantity > product.Quantity)
-                return BadRequest("Not enough stock");
+                return BadRequest(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status400BadRequest,
+                    Message = "Not enough stock"
+                });
 
             var orderitem = await _db.Orders.FirstOrDefaultAsync(o => o.UserId == userId && 
             o.Products.Any(oi => oi.ProductId == Pid));
@@ -108,7 +128,12 @@ namespace Eccomerce_Web.Controllers
         public async Task<IActionResult> GetAllOrders()
         {
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
-                return Unauthorized();
+                return Unauthorized(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status401Unauthorized,
+                    Message = "Error Finding User!"
+                });
 
             var orders = await _db.Orders     /// here 
                 .Where(o => o.UserId == userId)
@@ -167,7 +192,12 @@ namespace Eccomerce_Web.Controllers
         public async Task<IActionResult> CreateOrderFromCart()
         {
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
-                return Unauthorized();
+                return Unauthorized(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status401Unauthorized,
+                    Message = "Error Finding User!"
+                });
 
             var cartItems = await _db.CartItems
                 .Where(ci => ci.UserId == userId)
@@ -175,18 +205,33 @@ namespace Eccomerce_Web.Controllers
                 .ToListAsync();
 
             if (!cartItems.Any())
-                return BadRequest("Cart is empty");
+                return BadRequest(new ApiResponse<bool> { Data = false, Status = StatusCodes.Status400BadRequest, Message = "Cart is empty" });
 
             foreach (var item in cartItems)
             {
                 if (item.Product == null)
-                    return BadRequest($"Product not found for cart item {item.Id}");
+                    return BadRequest(new ApiResponse<bool>
+                    {
+                        Data = false,
+                        Status = StatusCodes.Status400BadRequest,
+                        Message = $"Product not found for cart item {item.Id}"
+                    });
 
                 if (item.Quantity <= 0)
-                    return BadRequest($"Invalid quantity for {item.Product.Name}");
+                    return BadRequest( new ApiResponse<bool>
+                    {
+                        Data = false,
+                        Status = StatusCodes.Status400BadRequest,
+                        Message = $"Invalid quantity for {item.Product.Name}"
+                    });
 
                 if (item.Quantity > item.Product.Quantity)
-                    return BadRequest($"Not enough stock for {item.Product.Name}");
+                    return BadRequest(new ApiResponse<bool>
+                    {
+                        Data = false,
+                        Status = StatusCodes.Status400BadRequest,
+                        Message = $"Not enough stock for {item.Product.Name}"
+                    });
             }
 
             var order = new Order
@@ -255,14 +300,24 @@ namespace Eccomerce_Web.Controllers
         public async Task<IActionResult> RemoveOrder(int OrderId)
         {
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
-                return Unauthorized();
+                return Unauthorized(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status401Unauthorized,
+                    Message = "Error Finding User!"
+                });
 
             var order = await _db.Orders
                 .Include(o => o.Products)
                 .FirstOrDefaultAsync(o => o.Id == OrderId && o.UserId == userId);
 
             if (order == null)
-                return NotFound("Order not found");
+                return NotFound(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status400BadRequest,
+                    Message = "Order not found"
+                });
 
             _db.Orders.Remove(order);
             await _db.SaveChangesAsync();
@@ -281,7 +336,12 @@ namespace Eccomerce_Web.Controllers
         public async Task<IActionResult> OrderUpdate(int OrderId, int OrdersProductsId, int Quantity)
         {
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
-                return Unauthorized();
+                return Unauthorized(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status401Unauthorized,
+                    Message = "Error Finding User!"
+                });
 
             var order = await _db.Orders
                 .Include(c => c.Products)

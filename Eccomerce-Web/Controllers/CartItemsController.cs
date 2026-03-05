@@ -37,14 +37,24 @@ namespace Eccomerce_Web.Controllers
         public async Task<IActionResult> GetCartItems()
         {
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
-                return Unauthorized();
+                return Unauthorized(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status401Unauthorized,
+                    Message = "Error Finding User!"
+                });
 
 
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
             var userRoleClaim = User.FindFirst(ClaimTypes.Role);
 
             if (userIdClaim == null || userRoleClaim == null)
-                return Unauthorized();
+                return Unauthorized(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status401Unauthorized,
+                    Message = "user Id Claim and user Role Claim is null"/// badri aq naxe sworia????????????????????
+                });
 
 
 
@@ -63,7 +73,12 @@ namespace Eccomerce_Web.Controllers
 
 
 
-            if (user == null) return Unauthorized();
+            if (user == null) return Unauthorized(new ApiResponse<bool>
+            {
+                Data = false,
+                Status = StatusCodes.Status401Unauthorized,
+                Message = "User is null"
+            });
 
 
 
@@ -98,7 +113,6 @@ namespace Eccomerce_Web.Controllers
                 Data = cartItemsDto,
                 Status = StatusCodes.Status200OK,
                 Message = $"Cart items retrieved successfully total price: {totalPrice}",
-
             });
         }
 
@@ -119,13 +133,23 @@ namespace Eccomerce_Web.Controllers
         public async Task<IActionResult> AddToCart(int ProductId, int Quantity)
         {
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
-                return Unauthorized();
+                return Unauthorized(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status401Unauthorized,
+                    Message = "Error Finding User!"
+                });
 
             var user = await _db.UserProfiles
                 .Include(u => u.CartItems)
                 .FirstOrDefaultAsync(u => u.UserId == userId);
 
-            if (user == null) return Unauthorized();
+            if (user == null) return Unauthorized(new ApiResponse<bool>
+            {
+                Data = false,
+                Status = StatusCodes.Status401Unauthorized,
+                Message = "Error Finding User!"
+            });
 
             var product = await _db.Products.FirstOrDefaultAsync(p => p.Id == ProductId);
 
@@ -206,7 +230,12 @@ namespace Eccomerce_Web.Controllers
         public async Task<IActionResult> RemoveFromCart(int CartItemId)
         {
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
-                return Unauthorized();
+                return Unauthorized(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status401Unauthorized,
+                    Message = "Error Finding User!"
+                });
             var cartItem = await _db.CartItems.FirstOrDefaultAsync(c => c.Id == CartItemId && c.UserId == userId);
             if (cartItem == null)
                 return NotFound(new ApiResponse<bool>
@@ -236,7 +265,12 @@ namespace Eccomerce_Web.Controllers
         public async Task<IActionResult> UpdateCartItem(int CartItemId, int Quantity)
         {
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
-                return Unauthorized();
+                return Unauthorized(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status401Unauthorized,
+                    Message = "Error Finding User!"
+                });
             var cartItem = await _db.CartItems
                 .Include(c => c.Product)
                 .FirstOrDefaultAsync(c => c.Id == CartItemId && c.UserId == userId);
@@ -279,7 +313,12 @@ namespace Eccomerce_Web.Controllers
         public async Task<IActionResult> ClearCart()
         {
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
-                return Unauthorized();
+                return Unauthorized(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status401Unauthorized,
+                    Message = "Error Finding User!"
+                });
             var cartItems = await _db.CartItems.Where(c => c.UserId == userId).ToListAsync();
             if (cartItems.Count == 0)
                 return NotFound(new ApiResponse<bool>

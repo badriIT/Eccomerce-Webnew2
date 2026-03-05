@@ -49,7 +49,12 @@ namespace Eccomerce_Web.Controllers
             var userRoleClaim = User.FindFirst(ClaimTypes.Role);
 
             if (userIdClaim == null || userRoleClaim == null)
-                return Unauthorized();
+                return Unauthorized(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status401Unauthorized,
+                    Message = "user Id Claim and user Role Claim is null"
+                });
 
             int userId = int.Parse(userIdClaim.Value);
 
@@ -178,7 +183,12 @@ namespace Eccomerce_Web.Controllers
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
 
             if (userIdClaim == null)
-                return Unauthorized();
+                return Unauthorized(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status401Unauthorized,
+                    Message = "user Id Claim is null"
+                });
 
             int userId = Convert.ToInt32(userIdClaim.Value);
 
@@ -186,7 +196,12 @@ namespace Eccomerce_Web.Controllers
                 .FirstOrDefaultAsync(u => u.UserId == userId);
 
             if (profileUser == null)
-                return NotFound("Profile user not found");
+                return NotFound(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status404NotFound,
+                    Message = "Profile user not found"
+                });
 
             profileUser.FullName = dto.FullName;
 
@@ -250,7 +265,12 @@ namespace Eccomerce_Web.Controllers
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
 
             if (userIdClaim == null)
-                return Unauthorized();
+                return Unauthorized(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status401Unauthorized,
+                    Message = "user Id Claim is null"
+                });
 
             int userId = Convert.ToInt32(userIdClaim.Value);
 
@@ -258,7 +278,12 @@ namespace Eccomerce_Web.Controllers
                 .FirstOrDefaultAsync(u => u.UserId == userId);
 
             if (profileUser == null)
-                return NotFound("Profile user not found");
+                return NotFound(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status404NotFound,
+                    Message = "Profile user not found"
+                });
 
             _db.Remove(profileUser);
             await _db.SaveChangesAsync();

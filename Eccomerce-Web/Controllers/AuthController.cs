@@ -32,7 +32,12 @@ namespace Eccomerce_Web.Controllers
         public async Task<IActionResult> AddUser(RegisterDto user)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                return BadRequest(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status400BadRequest,
+                    Message = "ModelState is not Valid"
+                });
 
             if (await _db.Users.AnyAsync(u => u.Email == user.Email))
             {
@@ -97,7 +102,12 @@ namespace Eccomerce_Web.Controllers
         public async Task<IActionResult> Login(LoginDto login)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                return BadRequest(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status400BadRequest,
+                    Message = "ModelsState is not valid"
+                });
 
             var user = await _db.Users
                 .Include(u => u.UserProfile)
@@ -114,17 +124,19 @@ namespace Eccomerce_Web.Controllers
             }
 
             if (!BCrypt.Net.BCrypt.Verify(login.Password, user.HashedPassword))
-                return BadRequest("Invalid password");
+                return BadRequest(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status400BadRequest,
+                    Message = "Invalid Password"
+                });
 
-          
-            var token = _JWTService.GetUserToken(user.UserProfile); 
 
-           
+            var token = _JWTService.GetUserToken(user.UserProfile);
 
             return Ok(new
             {
-                Token = token,
-               
+                Token = token
             });
         }
 

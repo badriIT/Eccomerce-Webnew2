@@ -1,12 +1,14 @@
-﻿using System.Collections.Immutable;
-using System.Security.Claims;
+﻿using Eccomerce_Web.CORE;
 using Eccomerce_Web.Data;
+using Eccomerce_Web.Models;
 using Eccomerce_Web.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Immutable;
+using System.Security.Claims;
 
 namespace Eccomerce_Web.Controllers
 {
@@ -64,9 +66,13 @@ namespace Eccomerce_Web.Controllers
             order.OrdersEnums = Enums.OrdersEnums.succseed;
             await _db.SaveChangesAsync();
 
-            return Ok("Purchase successful");
+            return Ok(new ApiResponse<Order>
+            {
+                Data = order,
+                Status = StatusCodes.Status200OK,
+                Message = "Product Bought Successfully"
+            });
         }
-       
         }
     }
 

@@ -1,6 +1,7 @@
 ﻿using Eccomerce_Web.CORE;
 using Eccomerce_Web.Data;
 using Eccomerce_Web.Dtos;
+using Eccomerce_Web.Models;
 using Eccomerce_Web.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -266,7 +267,12 @@ namespace Eccomerce_Web.Controllers
             _db.Orders.Remove(order);
             await _db.SaveChangesAsync();
 
-            return Ok("Order deleted successfully");
+            return Ok(new ApiResponse<Order>
+            {
+                Data = null,
+                Status = StatusCodes.Status200OK,
+                Message = "Order Deleted"
+            });
         }
 
 

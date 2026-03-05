@@ -1,10 +1,11 @@
+using System.Text;
+using System.Text.Json.Serialization;
 using Eccomerce_Web.Data;
-using Eccomerce_Web.Services.Implementations;
+using Eccomerce_Web.Services.implementations;
+
 using Eccomerce_Web.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using System.Text.Json.Serialization;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +17,9 @@ builder.Services.AddControllers().AddJsonOptions(options =>
         //options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
 
     });
+
+
+
 
 builder.Services.AddScoped<IJWTService, JWTService>();
 

@@ -3,6 +3,6 @@
     public enum OrdersEnums
     {
         Pending,
-        sucseed
+        succseed
     }
 }

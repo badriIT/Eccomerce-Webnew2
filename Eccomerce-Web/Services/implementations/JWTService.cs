@@ -7,7 +7,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Eccomerce_Web.Services.Implementations
+namespace Eccomerce_Web.Services.implementations
 {
     public class JWTService : IJWTService
     {

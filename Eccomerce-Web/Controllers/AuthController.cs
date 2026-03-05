@@ -1,4 +1,5 @@
-﻿using Eccomerce_Web.Data;
+﻿using Eccomerce_Web.CORE;
+using Eccomerce_Web.Data;
 using Eccomerce_Web.Dtos;
 using Eccomerce_Web.Models;
 using Eccomerce_Web.Services.Interfaces;
@@ -47,9 +48,6 @@ namespace Eccomerce_Web.Controllers
             }
 
 
-
-
-
             var hashPassword = BCrypt.Net.BCrypt.HashPassword(user.Password);
 
             var newUser = new User
@@ -86,13 +84,9 @@ namespace Eccomerce_Web.Controllers
             ApiResponse<string> ResponseOK = new()
             {
                 Data = "success",
-                Status = StatusCodes.Status200OK,
+                Status = StatusCodes.Status201Created,
                 Message = "Created Seccsessfully"
-
             };
-
-
-
 
             return Ok(ResponseOK);
         }

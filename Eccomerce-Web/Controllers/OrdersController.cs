@@ -1,13 +1,11 @@
-﻿using Eccomerce_Web.Data;
+﻿using Eccomerce_Web.CORE;
+using Eccomerce_Web.Data;
 using Eccomerce_Web.Dtos;
-using Eccomerce_Web.Models;
 using Eccomerce_Web.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Identity.Client.Extensibility;
 using System.Security.Claims;
 
 namespace Eccomerce_Web.Controllers
@@ -45,7 +43,10 @@ namespace Eccomerce_Web.Controllers
             if (Quantity > product.Quantity)
                 return BadRequest("Not enough stock");
 
+            var orderitem = await _db.Orders.FirstOrDefaultAsync(o => o.UserId == userId && 
+            o.Products.Any(oi => oi.ProductId == Pid));
 
+            if (orderitem != null) Quantity ++ ;
 
             var order = new Order
             {
@@ -126,6 +127,7 @@ namespace Eccomerce_Web.Controllers
             {
                 Id = o.Id,
                 OrderNumber = o.OrderNumber,
+                OrderStatus = o.OrdersEnums,
                 Products = o.Products.Select(ci => new CartItemsForOrderDto
                 {
                     ChoosedProductId = ci.Id,
@@ -143,7 +145,13 @@ namespace Eccomerce_Web.Controllers
 
 
                     }
-                }).ToList()
+
+                  
+
+
+
+                } ).ToList()
+               
             }).ToList();
 
             return Ok(new ApiResponse<List<OrderDto>>
@@ -282,7 +290,7 @@ namespace Eccomerce_Web.Controllers
                     Message = "Order not found"
                 });
 
-            var orderItem = order.Products.FirstOrDefault(u => u.Product.Id == OrdersProductsId);
+            var orderItem = order.Products.FirstOrDefault(u => u.Id == OrdersProductsId);
 
             if (orderItem == null)
                 return NotFound(new ApiResponse<bool>

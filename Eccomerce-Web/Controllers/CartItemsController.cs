@@ -1,6 +1,7 @@
 ﻿
 
 using System.Security.Claims;
+using Eccomerce_Web.CORE;
 using Eccomerce_Web.Data;
 using Eccomerce_Web.Dtos;
 using Eccomerce_Web.Models;

@@ -1,15 +1,13 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using Eccomerce_Web.Data;
+﻿using Eccomerce_Web.Data;
 using Eccomerce_Web.Models;
-using Eccomerce_Web.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+using Eccomerce_Web.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Eccomerce_Web.Dtos;
-using System.Xml;
+using Eccomerce_Web.CORE;
 
 namespace Eccomerce_Web.Controllers
 {
@@ -17,10 +15,6 @@ namespace Eccomerce_Web.Controllers
     [ApiController]
     public class UserController : ControllerBase
     {
-
-
-
-
         private readonly DataContext _db ;
         private readonly IJWTService _IJWTService;
 
@@ -30,8 +24,6 @@ namespace Eccomerce_Web.Controllers
             _IJWTService = JW;
 
         }
-
-
 
         //[HttpGet("Get-User")]
         //public async Task<IActionResult> GetUser()
@@ -44,11 +36,10 @@ namespace Eccomerce_Web.Controllers
         //    // }
 
         //    return Ok(user);
-        //}
+        // }
 
 
         //////////////////////////////// stop here uppen cuz it is admin functionality and we will do it in admin controller
-
 
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
         [HttpGet("Get-Current-User")]

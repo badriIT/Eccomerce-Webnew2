@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Eccomerce_Web.Models
+namespace Eccomerce_Web.CORE
 {
     public class ApiResponse<T>
     {

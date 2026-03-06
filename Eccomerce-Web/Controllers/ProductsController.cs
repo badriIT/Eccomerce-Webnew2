@@ -23,10 +23,6 @@ namespace Eccomerce_Web.Controllers
         public async Task<IActionResult> AddProduct(ProductDto product)
         {
 
-
-
-
-
             if (product == null)
             {
                 ApiResponse<bool> Response = new ApiResponse<bool>()
@@ -82,8 +78,6 @@ namespace Eccomerce_Web.Controllers
         {
             var products = await _Db.Products.ToListAsync();
 
-
-
             ApiResponse<List<Product>> response = new ApiResponse<List<Product>>
             {
                 Data = products,
@@ -92,7 +86,6 @@ namespace Eccomerce_Web.Controllers
             };
 
             return Ok(response);
-
 
         }
 
@@ -113,7 +106,6 @@ namespace Eccomerce_Web.Controllers
                     Message = "Product not Found"
                 };
 
-
                 return NotFound(response);
             }
 
@@ -123,8 +115,6 @@ namespace Eccomerce_Web.Controllers
                 Status = StatusCodes.Status200OK,
                 Message = ""
             };
-
-
 
             return Ok(ApiRes);
 
@@ -140,8 +130,6 @@ namespace Eccomerce_Web.Controllers
 
             if (product == null)
             {
-
-
                 ApiResponse<bool> response = new()
                 {
                     Data = false,
@@ -149,19 +137,15 @@ namespace Eccomerce_Web.Controllers
                     Message = "Product not Found"
                 };
 
-
-
                 return NotFound(response);
             }
-
-
 
             _Db.Products.Remove(product);
             await _Db.SaveChangesAsync();
             return NoContent();
 
-
         }
+
 
         [HttpPut("update-product/{id}")]
         public async Task<IActionResult> UpdateProductById(int id, ProductDto updatedProduct)
@@ -169,8 +153,6 @@ namespace Eccomerce_Web.Controllers
             var product = await _Db.Products.FindAsync(id);
             if (product == null)
             {
-
-
                 ApiResponse<bool> response = new()
                 {
                     Data = false,
@@ -178,33 +160,27 @@ namespace Eccomerce_Web.Controllers
                     Message = "Product not Found"
                 };
 
-
                 return NotFound(response);
             }
+
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
+
             product.Name = updatedProduct.Name;
             product.Size = updatedProduct.Size;
             product.Price = updatedProduct.Price;
             product.Quantity = updatedProduct.Quantity;
             product.Category = updatedProduct.Category;
             product.Description = updatedProduct.Description;
+
             await _Db.SaveChangesAsync();
-
-
-
-
 
             ApiResponse<Product> ApiResOk = new()
             {
-             Data = product,
-             Status = StatusCodes.Status200OK,
-             Message = "Product Updated"
+                Data = product,
+                Status = StatusCodes.Status200OK,
+                Message = "Product Updated"
             };
-
-        
-           
-
 
             return Ok(ApiResOk);
         }
@@ -217,7 +193,6 @@ namespace Eccomerce_Web.Controllers
             if (product == null)
             {
 
-
                 ApiResponse<bool> response = new()
                 {
                     Data = false,
@@ -225,10 +200,11 @@ namespace Eccomerce_Web.Controllers
                     Message = "Product not Found"
                 };
 
-
                 return NotFound(response);
             }
+
             if (!ModelState.IsValid)
+
                 return BadRequest(new ApiResponse<bool>
                 {
                     Data = false,
@@ -240,17 +216,12 @@ namespace Eccomerce_Web.Controllers
 
             await _Db.SaveChangesAsync();
 
-
             ApiResponse<Product> ApiResOk = new()
             {
                 Data = product,
                 Status = StatusCodes.Status200OK,
                 Message = "Product Updated"
             };
-
-
-
-
 
             return Ok(ApiResOk);
         }

@@ -25,7 +25,6 @@ namespace Eccomerce_Web.Controllers
         }
 
 
-
         [HttpPost("Post-Order")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
         public async Task<IActionResult> CreateSingleItemOrder(int Pid, int Quantity)
@@ -64,23 +63,26 @@ namespace Eccomerce_Web.Controllers
                     Message = "Not enough stock"
                 });
 
-            var orderitem = await _db.Orders.FirstOrDefaultAsync(o => o.UserId == userId && 
+            var orderitem = await _db.Orders.FirstOrDefaultAsync(o => o.UserId == userId &&
             o.Products.Any(oi => oi.ProductId == Pid));
 
-            if (orderitem != null) Quantity ++ ;
+            if (orderitem != null) Quantity++;
 
             var order = new Order
             {
                 UserId = userId,
                 OrderNumber = Guid.NewGuid().ToString("N")[..10].ToUpper(),
                 Products = new List<OrderItem>
-        {
-            new OrderItem
-            {
+             {
+
+             new OrderItem
+
+             {
                 ProductId = Pid,
                 Quantity = Quantity
+             }
+
             }
-        }
             };
 
             _db.Orders.Add(order);
@@ -116,8 +118,8 @@ namespace Eccomerce_Web.Controllers
 
             return Ok(new ApiResponse<OrderDto>
             {
-                Data = orderDto,
-                Status = StatusCodes.Status200OK,
+                Data = null,
+                Status = StatusCodes.Status201Created,
                 Message = "Order created successfully"
             });
         }
@@ -172,12 +174,12 @@ namespace Eccomerce_Web.Controllers
 
                     }
 
-                  
 
 
 
-                } ).ToList()
-               
+
+                }).ToList()
+
             }).ToList();
 
             return Ok(new ApiResponse<List<OrderDto>>
@@ -218,7 +220,7 @@ namespace Eccomerce_Web.Controllers
                     });
 
                 if (item.Quantity <= 0)
-                    return BadRequest( new ApiResponse<bool>
+                    return BadRequest(new ApiResponse<bool>
                     {
                         Data = false,
                         Status = StatusCodes.Status400BadRequest,
@@ -378,7 +380,7 @@ namespace Eccomerce_Web.Controllers
 
             await _db.SaveChangesAsync();
 
-            
+
 
             return Ok(new ApiResponse<Order>
             {

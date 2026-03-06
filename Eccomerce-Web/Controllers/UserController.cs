@@ -77,7 +77,6 @@ namespace Eccomerce_Web.Controllers
             OnlyUserInfoDto userProfileDto = new OnlyUserInfoDto
             {
                 Id = user.Id,
-              
                 Email = user.Email,
                 FullName = user.FullName,
                 PhoneNumber = user.PhoneNumber,
@@ -205,9 +204,6 @@ namespace Eccomerce_Web.Controllers
 
             profileUser.FullName = dto.FullName;
 
-
-
-
             var ExistingPhoneNumlUser = await _db.UserProfiles
                 .FirstOrDefaultAsync(u => u.PhoneNumber == dto.PhoneNumber && u.UserId != userId);
 
@@ -221,8 +217,6 @@ namespace Eccomerce_Web.Controllers
                 };
                 return Conflict(ResEmailConflict);
             }
-
-
 
             profileUser.PhoneNumber = dto.PhoneNumber;
 
@@ -240,7 +234,7 @@ namespace Eccomerce_Web.Controllers
                 return Conflict(ResEmailConflict);
             } 
 
-                profileUser.Email = dto.Email;
+            profileUser.Email = dto.Email;
 
             await _db.SaveChangesAsync();
 
@@ -250,7 +244,6 @@ namespace Eccomerce_Web.Controllers
                 Status = StatusCodes.Status200OK,
                 Message = "Updated successfully"
             };
-
 
             return Ok(res);
         }

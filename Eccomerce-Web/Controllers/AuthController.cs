@@ -25,9 +25,6 @@ namespace Eccomerce_Web.Controllers
         }
 
 
-
-
-
         [HttpPost("Register")]
         public async Task<IActionResult> AddUser(RegisterDto user)
         {
@@ -65,8 +62,6 @@ namespace Eccomerce_Web.Controllers
             await _db.Users.AddAsync(newUser);
             await _db.SaveChangesAsync();
 
-
-
             var userProfile = new UserProfile
             {
                 FullName = user.FullName,
@@ -77,14 +72,6 @@ namespace Eccomerce_Web.Controllers
 
             await _db.UserProfiles.AddAsync(userProfile);
             await _db.SaveChangesAsync();
-
-
-            //var userDto = new UserDto
-            //{
-            //    Email = newUser.Email
-            //};
-
-
 
             ApiResponse<string> ResponseOK = new()
             {

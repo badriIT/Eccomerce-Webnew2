@@ -29,8 +29,6 @@ namespace Eccomerce_Web.Controllers
         }
 
 
-
-
         [HttpGet("Cart-Products")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
 
@@ -44,7 +42,6 @@ namespace Eccomerce_Web.Controllers
                     Message = "Error Finding User!"
                 });
 
-
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
             var userRoleClaim = User.FindFirst(ClaimTypes.Role);
 
@@ -53,24 +50,18 @@ namespace Eccomerce_Web.Controllers
                 {
                     Data = false,
                     Status = StatusCodes.Status401Unauthorized,
-                    Message = "user Id Claim and user Role Claim is null"/// badri aq naxe sworia????????????????????
+                    Message = "user Id Claim and user Role Claim is null"/// badri aq naxe sworia???????????????????? // from B KI!!!
                 });
-
-
-
 
             var user = await _db.UserProfiles
                 .Include(u => u.CartItems)
                 .ThenInclude(c => c.Product)
                 .FirstOrDefaultAsync(u => u.UserId == userId);
 
-
-
             var cartItems = await _db.CartItems
                 .Include(c => c.Product)
                 .Where(c => c.UserId == userId)
                 .ToListAsync();
-
 
 
             if (user == null) return Unauthorized(new ApiResponse<bool>
@@ -79,9 +70,6 @@ namespace Eccomerce_Web.Controllers
                 Status = StatusCodes.Status401Unauthorized,
                 Message = "User is null"
             });
-
-
-
 
             var cartItemsDto = cartItems.Select(c => new ForCartItems
             {
@@ -103,11 +91,6 @@ namespace Eccomerce_Web.Controllers
 
             double totalPrice = cartItemsDto.Sum(item => item.SelectedQuantity * item.Product.Price);
 
-
-
-
-
-
             return Ok(new ApiResponse<List<ForCartItems>>
             {
                 Data = cartItemsDto,
@@ -115,14 +98,6 @@ namespace Eccomerce_Web.Controllers
                 Message = $"Cart items retrieved successfully total price: {totalPrice}",
             });
         }
-
-
-
-
-
-
-
-
 
 
 
@@ -171,13 +146,13 @@ namespace Eccomerce_Web.Controllers
 
             // Check if product already exists in cart
             var existingItem = _db.CartItems.Include(c => c.Product).Where(c => c.UserId == userId && c.ProductId == ProductId).FirstOrDefault();
-            
+
 
             if (existingItem != null)
             {
                 if (existingItem.Quantity + Quantity > product.Quantity)
                     return BadRequest(new ApiResponse<bool>                /////////// 04.03.26 00:55 need to make it work !!!! from Badri || 01:00 IT IS WORKING NICE!!!!!!!!!
-                    {   
+                    {
                         Data = false,
                         Status = StatusCodes.Status400BadRequest,
                         Message = "Exceeds available stock"
@@ -258,8 +233,6 @@ namespace Eccomerce_Web.Controllers
 
 
 
-
-
         [HttpPut("Cart-Product-Update")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
         public async Task<IActionResult> UpdateCartItem(int CartItemId, int Quantity)
@@ -301,13 +274,11 @@ namespace Eccomerce_Web.Controllers
                 Message = "Cart item updated"
             });
         }
-    
 
 
 
 
-    
-    [HttpDelete("Cart-Product-Clear-whole")]
+        [HttpDelete("Cart-Product-Clear-whole")]
 
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
         public async Task<IActionResult> ClearCart()
@@ -336,11 +307,11 @@ namespace Eccomerce_Web.Controllers
                 Message = "Cart cleared successfully"
             });
 
-        } 
+        }
     }
 
 
-    }
+}
 
 
 

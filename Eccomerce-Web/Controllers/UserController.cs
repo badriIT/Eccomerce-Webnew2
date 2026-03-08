@@ -41,7 +41,7 @@ namespace Eccomerce_Web.Controllers
 
         //////////////////////////////// stop here uppen cuz it is admin functionality and we will do it in admin controller
 
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User, Admin")]
         [HttpGet("Get-Current-User")]
         public async Task<IActionResult> GetUserProfile()
         {
@@ -62,7 +62,7 @@ namespace Eccomerce_Web.Controllers
                 .Include(u => u.CartItems)
                     .ThenInclude(c => c.Product)
                     .Include(o => o.Order).ThenInclude(p => p.Products)
-                     .Include(f => f.FavoritedProducts) 
+                     .Include(f => f.FavoritedProducts) .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.UserId == userId);
 
             if (user == null)
@@ -175,7 +175,7 @@ namespace Eccomerce_Web.Controllers
 
         /// this is update user badrii !!!!!!!!!!
         /// 
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User, Admin")]
         [HttpPut("Update-Current-User")]
         public async Task<IActionResult> UpdateCurrentUser(UserProfileUPTDto dto)
         {
@@ -251,7 +251,7 @@ namespace Eccomerce_Web.Controllers
 
         /// this is delete badri!!!!!!!!!!!!!!!!!!!!!!!!!!
         /// 
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User, Admin")]
         [HttpDelete("Delete-Current-User")]
         public async Task<IActionResult> DeleteCurrentUser()
         {

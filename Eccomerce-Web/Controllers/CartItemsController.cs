@@ -30,7 +30,7 @@ namespace Eccomerce_Web.Controllers
 
 
         [HttpGet("Cart-Products")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User, Admin")]
 
         public async Task<IActionResult> GetCartItems()
         {
@@ -60,7 +60,7 @@ namespace Eccomerce_Web.Controllers
 
             var cartItems = await _db.CartItems
                 .Include(c => c.Product)
-                .Where(c => c.UserId == userId)
+                .Where(c => c.UserId == userId).AsNoTracking()
                 .ToListAsync();
 
 
@@ -104,7 +104,7 @@ namespace Eccomerce_Web.Controllers
 
 
         [HttpPost("Cart-Product-Add")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User, Admin")]
         public async Task<IActionResult> AddToCart(int ProductId, int Quantity)
         {
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
@@ -199,42 +199,12 @@ namespace Eccomerce_Web.Controllers
 
 
 
-        [HttpDelete("Cart-Product-Delete")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
-
-        public async Task<IActionResult> RemoveFromCart(int CartItemId)
-        {
-            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
-                return Unauthorized(new ApiResponse<bool>
-                {
-                    Data = false,
-                    Status = StatusCodes.Status401Unauthorized,
-                    Message = "Error Finding User!"
-                });
-            var cartItem = await _db.CartItems.FirstOrDefaultAsync(c => c.Id == CartItemId && c.UserId == userId);
-            if (cartItem == null)
-                return NotFound(new ApiResponse<bool>
-                {
-                    Data = false,
-                    Status = StatusCodes.Status404NotFound,
-                    Message = "Cart not found"
-                });
-            _db.CartItems.Remove(cartItem);
-
-            await _db.SaveChangesAsync();
-            return Ok(new ApiResponse<bool>
-            {
-                Data = true,
-                Status = StatusCodes.Status200OK,
-                Message = "Successfully removed"
-            });
-        }
 
 
 
 
         [HttpPut("Cart-Product-Update")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User, Admin")]
         public async Task<IActionResult> UpdateCartItem(int CartItemId, int Quantity)
         {
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
@@ -280,7 +250,7 @@ namespace Eccomerce_Web.Controllers
 
         [HttpDelete("Cart-Product-Clear-whole")]
 
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User, Admin")]
         public async Task<IActionResult> ClearCart()
         {
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
@@ -307,6 +277,40 @@ namespace Eccomerce_Web.Controllers
                 Message = "Cart cleared successfully"
             });
 
+        }
+
+
+
+        [HttpDelete("Cart-Product-Delete")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User, Admin")] 
+
+
+        public async Task<IActionResult> RemoveFromCart(int CartItemId)
+        {
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
+                return Unauthorized(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status401Unauthorized,
+                    Message = "Error Finding User!"
+                });
+            var cartItem = await _db.CartItems.FirstOrDefaultAsync(c => c.Id == CartItemId && c.UserId == userId);
+            if (cartItem == null)
+                return NotFound(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status404NotFound,
+                    Message = "Cart not found"
+                });
+            _db.CartItems.Remove(cartItem);
+
+            await _db.SaveChangesAsync();
+            return Ok(new ApiResponse<bool>
+            {
+                Data = true,
+                Status = StatusCodes.Status200OK,
+                Message = "Successfully removed"
+            });
         }
     }
 

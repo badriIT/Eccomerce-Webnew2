@@ -84,7 +84,6 @@ namespace Eccomerce_Web.Controllers
         }
 
 
-
         [HttpPost("Login")]
         public async Task<IActionResult> Login(LoginDto login)
         {
@@ -95,6 +94,31 @@ namespace Eccomerce_Web.Controllers
                     Status = StatusCodes.Status400BadRequest,
                     Message = "ModelsState is not valid"
                 });
+
+
+           var Admin = await _db.Admins.FirstOrDefaultAsync(u => u.email == login.Email);
+
+
+                
+
+            if (!BCrypt.Net.BCrypt.Verify(login.Password, Admin.password))
+                return BadRequest(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status400BadRequest,
+                    Message = "Invalid Password"
+                });
+
+            var tokenAdmin = _JWTService.GetAdminToken(Admin);
+
+            if (BCrypt.Net.BCrypt.Verify(login.Password, Admin.password))
+                return Ok(tokenAdmin);
+
+
+            //if(Admin.password == login.Password)
+
+
+
 
             var user = await _db.Users
                 .Include(u => u.UserProfile)
@@ -110,6 +134,7 @@ namespace Eccomerce_Web.Controllers
                 });
             }
 
+
             if (!BCrypt.Net.BCrypt.Verify(login.Password, user.HashedPassword))
                 return BadRequest(new ApiResponse<bool>
                 {
@@ -123,9 +148,13 @@ namespace Eccomerce_Web.Controllers
 
             return Ok(new
             {
-                Token = token
+                
             });
         }
+
+
+
+       
 
 
 

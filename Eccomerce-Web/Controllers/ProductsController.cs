@@ -2,6 +2,8 @@
 using Eccomerce_Web.Data;
 using Eccomerce_Web.Dtos;
 using Eccomerce_Web.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +20,61 @@ namespace Eccomerce_Web.Controllers
         public ProductsController(DataContext Db) => _Db = Db;
 
 
+
+        
+
+
+
+        [HttpGet("get-all-products")]
+        public async Task<IActionResult> GetProducts()
+        {
+            var products = await _Db.Products.AsNoTracking().ToListAsync();
+
+            ApiResponse<List<Product>> response = new ApiResponse<List<Product>>
+            {
+                Data = products,
+                Status = StatusCodes.Status200OK,
+                Message = "Products retrieved successfully"
+            };
+
+            return Ok(response);
+
+        }
+
+
+
+        [HttpGet("get-product-by-id/{id}")]
+
+        public async Task<IActionResult> GetProductById(int id)
+        {
+
+            var product = await _Db.Products.FindAsync(id);
+            if (product == null)
+            {
+                ApiResponse<bool> response = new()
+                {
+                    Data = false,
+                    Status = StatusCodes.Status404NotFound,
+                    Message = "Product not Found"
+                };
+
+                return NotFound(response);
+            }
+
+            ApiResponse<Product> ApiRes = new()
+            {
+                Data = product,
+                Status = StatusCodes.Status200OK,
+                Message = ""
+            };
+
+            return Ok(ApiRes);
+
+        }
+
+
+
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
 
         [HttpPost("add-product")]
         public async Task<IActionResult> AddProduct(ProductDto product)
@@ -73,80 +130,7 @@ namespace Eccomerce_Web.Controllers
 
 
 
-        [HttpGet("get-all-products")]
-        public async Task<IActionResult> GetProducts()
-        {
-            var products = await _Db.Products.ToListAsync();
-
-            ApiResponse<List<Product>> response = new ApiResponse<List<Product>>
-            {
-                Data = products,
-                Status = StatusCodes.Status200OK,
-                Message = "Products retrieved successfully"
-            };
-
-            return Ok(response);
-
-        }
-
-
-
-        [HttpGet("get-product-by-id/{id}")]
-
-        public async Task<IActionResult> GetProductById(int id)
-        {
-
-            var product = await _Db.Products.FindAsync(id);
-            if (product == null)
-            {
-                ApiResponse<bool> response = new()
-                {
-                    Data = false,
-                    Status = StatusCodes.Status404NotFound,
-                    Message = "Product not Found"
-                };
-
-                return NotFound(response);
-            }
-
-            ApiResponse<Product> ApiRes = new()
-            {
-                Data = product,
-                Status = StatusCodes.Status200OK,
-                Message = ""
-            };
-
-            return Ok(ApiRes);
-
-        }
-
-
-        [HttpDelete("delete-product/{id}")]
-
-        public async Task<IActionResult> DeleteProductById(int id)
-        {
-
-            var product = await _Db.Products.FindAsync(id);
-
-            if (product == null)
-            {
-                ApiResponse<bool> response = new()
-                {
-                    Data = false,
-                    Status = StatusCodes.Status404NotFound,
-                    Message = "Product not Found"
-                };
-
-                return NotFound(response);
-            }
-
-            _Db.Products.Remove(product);
-            await _Db.SaveChangesAsync();
-            return NoContent();
-
-        }
-
-
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
         [HttpPut("update-product/{id}")]
         public async Task<IActionResult> UpdateProductById(int id, ProductDto updatedProduct)
         {
@@ -185,7 +169,7 @@ namespace Eccomerce_Web.Controllers
             return Ok(ApiResOk);
         }
 
-
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
         [HttpPut("update-product-quantity/{id}")]
         public async Task<IActionResult> UpdateProductsQuantity(int id, int Quantity)
         {
@@ -225,7 +209,37 @@ namespace Eccomerce_Web.Controllers
 
             return Ok(ApiResOk);
         }
+
+
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
+        [HttpDelete("delete-product/{id}")]
+
+        public async Task<IActionResult> DeleteProductById(int id)
+        {
+
+            var product = await _Db.Products.FindAsync(id);
+
+            if (product == null)
+            {
+                ApiResponse<bool> response = new()
+                {
+                    Data = false,
+                    Status = StatusCodes.Status404NotFound,
+                    Message = "Product not Found"
+                };
+
+                return NotFound(response);
+            }
+
+            _Db.Products.Remove(product);
+            await _Db.SaveChangesAsync();
+            return NoContent();
+
+        }
     }
+
+
+
 }
 
 

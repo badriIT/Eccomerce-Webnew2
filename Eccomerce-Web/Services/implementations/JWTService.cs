@@ -18,7 +18,7 @@ namespace Eccomerce_Web.Services.implementations
             var jwtAudience = "isini";
             var jwtDuration = 300;
 
-            
+
 
             var secuirityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
             var credentials = new SigningCredentials(secuirityKey, SecurityAlgorithms.HmacSha256);
@@ -31,6 +31,7 @@ namespace Eccomerce_Web.Services.implementations
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Role, user.Role)
            };
+
 
             var token = new JwtSecurityToken(
 
@@ -46,7 +47,56 @@ namespace Eccomerce_Web.Services.implementations
                 Token = new JwtSecurityTokenHandler().WriteToken(token)
             };
         }
-       
+
+
+
+
+
+
+
+
+
+
+        public AdminToken GetAdminToken(Admin admin)
+        {
+            var jwtKey = "Blakhljkqrtojh134iotuoiewjytijdkljgaejktioqwejrwuokyhqoriejtoiwqtosdfsdfsdfsdfsdfsdfC";
+            var jwtIssuer = "chven";
+            var jwtAudience = "isini";
+            var jwtDuration = 300;
+
+
+
+            var secuirityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+            var credentials = new SigningCredentials(secuirityKey, SecurityAlgorithms.HmacSha256);
+
+
+            var Claims = new[]
+           {
+            new Claim(ClaimTypes.NameIdentifier, admin.id.ToString()),
+            new Claim(ClaimTypes.Email, admin.email),
+            new Claim(ClaimTypes.Role, admin.Role)
+           };
+
+
+            var token = new JwtSecurityToken(
+
+                issuer: jwtIssuer,
+                audience: jwtAudience,
+                expires: DateTime.Now.AddMinutes(jwtDuration),
+                claims: Claims,
+                signingCredentials: credentials
+            );
+
+            return new AdminToken
+            {
+                Token = new JwtSecurityTokenHandler().WriteToken(token)
+            };
+        }
+
+
+
+
+
     }
 
 }

@@ -57,6 +57,16 @@ namespace Eccomerce_Web.Controllers
                     Message = "Order not found"
                 });
 
+            if(order.OrdersEnums == Enums.OrdersEnums.succseed)
+            {
+                return BadRequest(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status401Unauthorized,
+                    Message = "Order is already paid"
+                });
+            }
+
             if (order.UserId != userId)
                 return Forbid();
 

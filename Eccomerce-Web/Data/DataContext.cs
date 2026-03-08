@@ -14,6 +14,8 @@ namespace Eccomerce_Web.Data
 
         public DbSet<OrderItem> OrderItems { get; set; }
 
+        public DbSet<Admin> Admins { get; set; }
+
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {

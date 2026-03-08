@@ -6,5 +6,7 @@ namespace Eccomerce_Web.Services.Interfaces
     public interface IJWTService
     {
         UserToken GetUserToken(UserProfile user);
+
+        AdminToken GetAdminToken(Admin admin);
     }
 }

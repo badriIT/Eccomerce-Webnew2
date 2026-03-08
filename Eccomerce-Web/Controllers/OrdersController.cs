@@ -25,8 +25,75 @@ namespace Eccomerce_Web.Controllers
         }
 
 
+
+        [HttpGet("Get-All-Orders")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User, Admin")]
+        public async Task<IActionResult> GetAllOrders()
+        {
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
+                return Unauthorized(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status401Unauthorized,
+                    Message = "Error Finding User!"
+                });
+
+            var orders = await _db.Orders     /// here 
+                .Where(o => o.UserId == userId)
+                .Include(o => o.Products)
+                    .ThenInclude(ci => ci.Product).AsNoTracking()
+                .ToListAsync();
+
+            if (!orders.Any())
+                return Ok(new ApiResponse<List<OrderDto>>
+                {
+                    Data = new List<OrderDto>(),
+                    Status = StatusCodes.Status200OK,
+                    Message = "No orders found"
+                });
+
+            var ordersDto = orders.Select(o => new OrderDto
+            {
+                Id = o.Id,
+                OrderNumber = o.OrderNumber,
+                OrderStatus = o.OrdersEnums,
+                Products = o.Products.Select(ci => new CartItemsForOrderDto
+                {
+                    ChoosedProductId = ci.Id,
+                    SelectedQuantity = ci.Quantity,           //////////// like tthis
+                    Product = new ForOrderProductsDto
+                    {
+                        Id = ci.Product.Id,
+                        Name = ci.Product.Name,
+                        Description = ci.Product.Description,
+                        Price = ci.Product.Price,
+                        Quantity = ci.Product.Quantity,
+                        Size = ci.Product.Size,
+                        Category = ci.Product.Category,
+                        CreatedAt = ci.Product.CreatedAt,
+
+
+                    }
+
+
+
+
+
+                }).ToList()
+
+            }).ToList();
+
+            return Ok(new ApiResponse<List<OrderDto>>
+            {
+                Data = ordersDto,
+                Status = StatusCodes.Status200OK,
+                Message = "Orders retrieved successfully"
+            });
+        }
+
+
         [HttpPost("Post-Order")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User, Admin")]
         public async Task<IActionResult> CreateSingleItemOrder(int Pid, int Quantity)
         {
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
@@ -125,72 +192,9 @@ namespace Eccomerce_Web.Controllers
         }
 
 
-        [HttpGet("Get-All-Orders")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
-        public async Task<IActionResult> GetAllOrders()
-        {
-            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
-                return Unauthorized(new ApiResponse<bool>
-                {
-                    Data = false,
-                    Status = StatusCodes.Status401Unauthorized,
-                    Message = "Error Finding User!"
-                });
-
-            var orders = await _db.Orders     /// here 
-                .Where(o => o.UserId == userId)
-                .Include(o => o.Products)
-                    .ThenInclude(ci => ci.Product)
-                .ToListAsync();
-
-            if (!orders.Any())
-                return Ok(new ApiResponse<List<OrderDto>>
-                {
-                    Data = new List<OrderDto>(),
-                    Status = StatusCodes.Status200OK,
-                    Message = "No orders found"
-                });
-
-            var ordersDto = orders.Select(o => new OrderDto
-            {
-                Id = o.Id,
-                OrderNumber = o.OrderNumber,
-                OrderStatus = o.OrdersEnums,
-                Products = o.Products.Select(ci => new CartItemsForOrderDto
-                {
-                    ChoosedProductId = ci.Id,
-                    SelectedQuantity = ci.Quantity,           //////////// like tthis
-                    Product = new ForOrderProductsDto
-                    {
-                        Id = ci.Product.Id,
-                        Name = ci.Product.Name,
-                        Description = ci.Product.Description,
-                        Price = ci.Product.Price,
-                        Quantity = ci.Product.Quantity,
-                        Size = ci.Product.Size,
-                        Category = ci.Product.Category,
-                        CreatedAt = ci.Product.CreatedAt,
-
-
-                    }
-
-
-
-
-
-                }).ToList()
-
-            }).ToList();
-
-            return Ok(new ApiResponse<List<OrderDto>>
-            {
-                Data = ordersDto,
-                Status = StatusCodes.Status200OK,
-                Message = "Orders retrieved successfully"
-            });
-        }
+        
         [HttpPost("Create-Order-From-Cart")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User, Admin")]
         public async Task<IActionResult> CreateOrderFromCart()
         {
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
@@ -297,44 +301,11 @@ namespace Eccomerce_Web.Controllers
 
 
 
-        [HttpDelete("Order-Delete")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
-        public async Task<IActionResult> RemoveOrder(int OrderId)
-        {
-            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
-                return Unauthorized(new ApiResponse<bool>
-                {
-                    Data = false,
-                    Status = StatusCodes.Status401Unauthorized,
-                    Message = "Error Finding User!"
-                });
-
-            var order = await _db.Orders
-                .Include(o => o.Products)
-                .FirstOrDefaultAsync(o => o.Id == OrderId && o.UserId == userId);
-
-            if (order == null)
-                return NotFound(new ApiResponse<bool>
-                {
-                    Data = false,
-                    Status = StatusCodes.Status400BadRequest,
-                    Message = "Order not found"
-                });
-
-            _db.Orders.Remove(order);
-            await _db.SaveChangesAsync();
-
-            return Ok(new ApiResponse<Order>
-            {
-                Data = null,
-                Status = StatusCodes.Status200OK,
-                Message = "Order Deleted"
-            });
-        }
+        
 
 
         [HttpPut("Order-Update")]  // From Badri (need to fix it in create order from cart it is not working says 404 not found product.)
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User, Admin")]
         public async Task<IActionResult> OrderUpdate(int OrderId, int OrdersProductsId, int Quantity)
         {
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
@@ -390,6 +361,41 @@ namespace Eccomerce_Web.Controllers
             });
         }
 
+
+        [HttpDelete("Order-Delete")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User, Admin")]
+        public async Task<IActionResult> RemoveOrder(int OrderId)
+        {
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
+                return Unauthorized(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status401Unauthorized,
+                    Message = "Error Finding User!"
+                });
+
+            var order = await _db.Orders
+                .Include(o => o.Products)
+                .FirstOrDefaultAsync(o => o.Id == OrderId && o.UserId == userId);
+
+            if (order == null)
+                return NotFound(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status400BadRequest,
+                    Message = "Order not found"
+                });
+
+            _db.Orders.Remove(order);
+            await _db.SaveChangesAsync();
+
+            return Ok(new ApiResponse<Order>
+            {
+                Data = null,
+                Status = StatusCodes.Status200OK,
+                Message = "Order Deleted"
+            });
+        }
 
 
 

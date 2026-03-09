@@ -87,44 +87,14 @@ namespace Eccomerce_Web.Controllers
         [HttpPost("Login")]
         public async Task<IActionResult> Login(LoginDto login)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(new ApiResponse<bool>
-                {
-                    Data = false,
-                    Status = StatusCodes.Status400BadRequest,
-                    Message = "ModelsState is not valid"
-                });
-
-
-           var Admin = await _db.Admins.FirstOrDefaultAsync(u => u.email == login.Email);
-
-
-                
-
-            if (!BCrypt.Net.BCrypt.Verify(login.Password, Admin.password))
-                return BadRequest(new ApiResponse<bool>
-                {
-                    Data = false,
-                    Status = StatusCodes.Status400BadRequest,
-                    Message = "Invalid Password"
-                });
-
-            var tokenAdmin = _JWTService.GetAdminToken(Admin);
-
-            if (BCrypt.Net.BCrypt.Verify(login.Password, Admin.password))
-                return Ok(tokenAdmin);
-
-
-            //if(Admin.password == login.Password)
-
-
-
+            var admin = await _db.Admins
+                .FirstOrDefaultAsync(a => a.email == login.Email);
 
             var user = await _db.Users
                 .Include(u => u.UserProfile)
                 .FirstOrDefaultAsync(u => u.Email == login.Email);
 
-            if (user == null)
+            if (user == null && admin == null)
             {
                 return NotFound(new ApiResponse<bool>
                 {
@@ -134,31 +104,32 @@ namespace Eccomerce_Web.Controllers
                 });
             }
 
-
-            if (!BCrypt.Net.BCrypt.Verify(login.Password, user.HashedPassword))
-                return BadRequest(new ApiResponse<bool>
-                {
-                    Data = false,
-                    Status = StatusCodes.Status400BadRequest,
-                    Message = "Invalid Password"
-                });
-
-
-            var token = _JWTService.GetUserToken(user.UserProfile);
-
-            return Ok(new
+            if (user != null && BCrypt.Net.BCrypt.Verify(login.Password, user.HashedPassword))
             {
-                
+                var token = _JWTService.GetUserToken(user.UserProfile);
+                return Ok(token);
+            }
+
+            if (admin != null && BCrypt.Net.BCrypt.Verify(login.Password, admin.password))
+            {
+                var tokenAdmin = _JWTService.GetAdminToken(admin);
+                return Ok(tokenAdmin);
+            }
+
+            return BadRequest(new ApiResponse<bool>
+            {
+                Data = false,
+                Status = StatusCodes.Status400BadRequest,
+                Message = "Invalid Password"
             });
         }
 
 
 
-       
 
 
 
-        
+
 
 
 

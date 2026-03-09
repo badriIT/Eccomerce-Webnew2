@@ -1,6 +1,7 @@
 ﻿using Eccomerce_Web.CORE;
 using Eccomerce_Web.Data;
 using Eccomerce_Web.Dtos;
+using Eccomerce_Web.Enums;
 using Eccomerce_Web.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -21,24 +22,53 @@ namespace Eccomerce_Web.Controllers
 
 
 
-        
 
 
 
         [HttpGet("get-all-products")]
-        public async Task<IActionResult> GetProducts()
+        public async Task<IActionResult> GetProducts(
+            Category? category,
+            double? minPrice,
+            double? maxPrice,
+            string? sort,
+            int page = 1,
+            int pageSize = 10)
         {
-            var products = await _Db.Products.AsNoTracking().ToListAsync();
+            var query = _Db.Products.AsQueryable();
 
-            ApiResponse<List<Product>> response = new ApiResponse<List<Product>>
+            // Filtering
+            if (category.HasValue)
+                query = query.Where(p => p.Category == category);
+
+            if (minPrice.HasValue)
+                query = query.Where(p => p.Price >= minPrice);
+
+            if (maxPrice.HasValue)
+                query = query.Where(p => p.Price <= maxPrice);
+
+            // Sorting
+            query = sort switch
+            {
+                "price_asc" => query.OrderBy(p => p.Price),
+                "price_desc" => query.OrderByDescending(p => p.Price),
+                "name_asc" => query.OrderBy(p => p.Name),
+                "name_desc" => query.OrderByDescending(p => p.Name),
+                _ => query.OrderByDescending(p => p.CreatedAt)
+            };
+
+            // Pagination
+            var products = await query
+                .AsNoTracking()
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return Ok(new ApiResponse<List<Product>>
             {
                 Data = products,
                 Status = StatusCodes.Status200OK,
                 Message = "Products retrieved successfully"
-            };
-
-            return Ok(response);
-
+            });
         }
 
 

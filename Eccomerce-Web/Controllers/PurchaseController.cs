@@ -53,7 +53,7 @@ namespace Eccomerce_Web.Controllers
                 return NotFound(new ApiResponse<bool>
                 {
                     Data = false,
-                    Status = StatusCodes.Status401Unauthorized,
+                    Status = StatusCodes.Status404NotFound,
                     Message = "Order not found"
                 });
 
@@ -62,7 +62,7 @@ namespace Eccomerce_Web.Controllers
                 return BadRequest(new ApiResponse<bool>
                 {
                     Data = false,
-                    Status = StatusCodes.Status401Unauthorized,
+                    Status = StatusCodes.Status409Conflict,
                     Message = "Order is already paid"
                 });
             }
@@ -79,7 +79,7 @@ namespace Eccomerce_Web.Controllers
                 return NotFound(new ApiResponse<Order>
                 {
                     Data = order,
-                    Status = StatusCodes.Status401Unauthorized,
+                    Status = StatusCodes.Status409Conflict,
                     Message = "Order has no products"
                 });
 

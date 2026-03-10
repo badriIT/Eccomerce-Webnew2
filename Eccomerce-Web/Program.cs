@@ -1,14 +1,11 @@
 using Eccomerce_Web.Data;
 using Eccomerce_Web.Models;
 using Eccomerce_Web.Services.implementations;
-using Eccomerce_Web.Services.Implementations;
+
 using Eccomerce_Web.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.Text;
-using System.Text.Json.Serialization;
-
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,12 +23,8 @@ builder.Services.AddScoped<IJWTService, JWTService>();
 
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
-builder.Services.AddScoped<IEmailSender, EmailSender>();
 
-builder.Services.AddScoped<IPhoneSender, PhoneSender>();
-
-
-
+builder.Services.AddScoped<IJWTService, JWTService>();
 
 builder.Services.AddCors(options =>
 {

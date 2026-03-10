@@ -26,4 +26,10 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="HTML\verification-email.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

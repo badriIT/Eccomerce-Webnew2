@@ -18,15 +18,33 @@ namespace Eccomerce_Web.Controllers
         private readonly DataContext _db;
         private readonly IJWTService _JWTService;
         private readonly IEmailSender _emailSender;
+<<<<<<< HEAD
         private readonly IPhoneSender _phoneSender;
 
 
         public AuthController(DataContext db, IJWTService jwt, IEmailSender emailSender, IPhoneSender phoneSender)
+=======
+
+
+        public AuthController(DataContext db, IJWTService jwt, IEmailSender emailSender)
+>>>>>>> 78fc563eed88638548b1f7792efd1864c6c9a2d1
         {
             _db = db;
             _JWTService = jwt;
             _emailSender = emailSender;
+<<<<<<< HEAD
             _phoneSender = phoneSender;
+=======
+        }
+
+        [HttpPost("send-email")]
+        public async Task<IActionResult> VerifyEmail()
+        {
+            await _emailSender.SendEmailAsync(
+                "badriberidze042@gmail.com"
+            );
+            return Ok("Email sent!");
+>>>>>>> 78fc563eed88638548b1f7792efd1864c6c9a2d1
         }
 
         [HttpPost("send-email")]

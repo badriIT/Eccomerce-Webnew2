@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
-namespace Eccomerce_Web.Controllers
+namespace Eccomerce_Web.Modules.User.Controller
 {
     [Route("api/[controller]")]
     [ApiController]

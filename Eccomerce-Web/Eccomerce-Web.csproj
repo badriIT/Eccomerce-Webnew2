@@ -1,10 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Eccomerce_Web</RootNamespace>
+    <UserSecretsId>c234fcaa-0e92-4613-9b79-f88b346ff364</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -34,34 +35,16 @@
 
   <ItemGroup>
     <Folder Include="Modules\Admin\Dtos\Request\" />
-    <Folder Include="Modules\Admin\Dtos\Response\" />
-    <Folder Include="Modules\Admin\Services\Implementations\" />
-    <Folder Include="Modules\Admin\Services\Interfaces\" />
     <Folder Include="Modules\Admin\Validators\" />
-    <Folder Include="Modules\Auth\Dtos\Request\" />
     <Folder Include="Modules\Auth\Dtos\Response\" />
-    <Folder Include="Modules\Auth\Services\Implementations\" />
-    <Folder Include="Modules\Auth\Services\Interfaces\" />
     <Folder Include="Modules\Auth\Validators\" />
     <Folder Include="Modules\CartItems\Dtos\Request\" />
-    <Folder Include="Modules\CartItems\Dtos\Response\" />
-    <Folder Include="Modules\CartItems\Services\Implementations\" />
-    <Folder Include="Modules\CartItems\Services\Interfaces\" />
     <Folder Include="Modules\CartItems\Validators\" />
     <Folder Include="Modules\Orders\Dtos\Request\" />
-    <Folder Include="Modules\Orders\Dtos\Response\" />
-    <Folder Include="Modules\Orders\Services\Implementations\" />
-    <Folder Include="Modules\Orders\Services\Interfaces\" />
     <Folder Include="Modules\Orders\Validators\" />
-    <Folder Include="Modules\Products\Dtos\Request\" />
-    <Folder Include="Modules\Products\Dtos\Response\" />
-    <Folder Include="Modules\Products\Services\Implementations\" />
-    <Folder Include="Modules\Products\Services\Interfaces\" />
     <Folder Include="Modules\Products\Validators\" />
     <Folder Include="Modules\Purchase\Dtos\Response\" />
     <Folder Include="Modules\Purchase\Dtos\Request\" />
-    <Folder Include="Modules\Purchase\Services\Interfaces\" />
-    <Folder Include="Modules\Purchase\Services\Implementations\" />
     <Folder Include="Modules\Purchase\Validators\" />
     <Folder Include="Modules\User\Dtos\Request\" />
     <Folder Include="Modules\User\Validations\" />

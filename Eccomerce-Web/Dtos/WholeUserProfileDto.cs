@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Eccomerce_Web.Models;
+using Eccomerce_Web.Modules.CartItems.Dtos.Response;
 
 namespace Eccomerce_Web.Dtos
 {

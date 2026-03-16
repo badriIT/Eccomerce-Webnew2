@@ -22,6 +22,10 @@ namespace Eccomerce_Web.Common.Dtos.Responses
             };
         }
 
+
+   
+
+
         public static ApiResponse<T> BadRequest(string? message = "Bad Request")
         {
             return new ApiResponse<T>

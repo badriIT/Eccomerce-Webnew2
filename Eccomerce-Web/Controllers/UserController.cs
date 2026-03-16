@@ -1,334 +1,194 @@
-﻿using Eccomerce_Web.Data;
-using Eccomerce_Web.Models;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
-using Eccomerce_Web.Services.Interfaces;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
-using Eccomerce_Web.Dtos;
-using Eccomerce_Web.CORE;
-
-namespace Eccomerce_Web.Controllers
-{
-    [Route("api/[controller]")]
-    [ApiController]
-    public class UserController : ControllerBase
-    {
-        private readonly DataContext _db ;
-        private readonly IJWTService _IJWTService;
-
-        public UserController(DataContext db, IJWTService JW)
-        {
-            _db = db;
-            _IJWTService = JW;
-
-        }
-
-        //[HttpGet("Get-User")]
-        //public async Task<IActionResult> GetUser()
-        //{
-        //    var user = await _db.Users.Include(s => s.UserProfile).ToListAsync();
-
-        //    // if (user == null)
-        //    // {
-        //    //     return BadRequest("Invalid user."); why? just return blank array 
-        //    // }
-
-        //    return Ok(user);
-        // }
-
-
-        //////////////////////////////// stop here uppen cuz it is admin functionality and we will do it in admin controller
-
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User, Admin")]
-        [HttpGet("Get-Current-User")]
-        public async Task<IActionResult> GetUserProfile()
-        {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            var userRoleClaim = User.FindFirst(ClaimTypes.Role);
-
-            if (userIdClaim == null || userRoleClaim == null)
-                return Unauthorized(new ApiResponse<bool>
-                {
-                    Data = false,
-                    Status = StatusCodes.Status401Unauthorized,
-                    Message = "user Id Claim and user Role Claim is null"
-                });
-
-            int userId = int.Parse(userIdClaim.Value);
-
-            var user = await _db.UserProfiles
-                .Include(u => u.CartItems)
-                    .ThenInclude(c => c.Product)
-                    .Include(o => o.Order).ThenInclude(p => p.Products)
-                     .Include(f => f.FavoritedProducts) .AsNoTracking()
-                .FirstOrDefaultAsync(u => u.UserId == userId);
-
-            if (user == null)
-                return Unauthorized(new ApiResponse<bool>
-                {
-                    Data = false,
-                    Status = StatusCodes.Status404NotFound,
-                    Message = "User not found"
-                });
-
-
-            OnlyUserInfoDto userProfileDto = new OnlyUserInfoDto
-            {
-                Id = user.Id,
-                Email = user.Email,
-                FullName = user.FullName,
-                PhoneNumber = user.PhoneNumber,
-                Role = user.Role
-            };
-
-
-
-            //WholeUserProfileDto userProfileDto = new WholeUserProfileDto
-            //{
-
-            //    Id = user.Id,
-            //    UserId = user.UserId,
-            //    Email = user.Email,
-            //    FullName = user.FullName,
-            //    PhoneNumber = user.PhoneNumber,
-            //    Role = user.Role,
-            //    CartItems = user.CartItems.Select(c => new ForCartItems
-            //    {
-            //        SelectedQuantity = c.Quantity,
-            //        CartItemIdInCart = c.Id,
-            //        Product = new ForProfileProductDto
-            //        {
-            //            Id = c.Product.Id,
-            //            Name = c.Product.Name,
-            //            Price = c.Product.Price,
-            //            Description = c.Product.Description,
-            //            Size = c.Product.Size,
-            //            Category = c.Product.Category,
-            //            CreatedAt = c.Product.CreatedAt,
-            //            IsFavorited = user.FavoritedProducts.Any(fp => fp.Id == c.Product.Id),
-            //            Quantity = c.Product.Quantity
-
-
-
-
-
-
-            //        }
-            //    }).ToList(),
-            //    Order = user.Order.Select(o => new ForWholeProfileOrderDto
-            //    {
-            //        OrderNumber = o.OrderNumber,
-
-            //        Products = o.Products.Select(p => new ForCartItems
-            //        {
-
-            //            SelectedQuantity = p.Quantity,
-            //            Product = new ForProfileProductDto
-            //            {
-            //                Id = p.Product.Id,
-            //                Name = p.Product.Name,
-            //                Price = p.Product.Price,
-            //                Description = p.Product.Description,
-            //                Size = p.Product.Size,
-            //                Category = p.Product.Category,
-            //                CreatedAt = p.Product.CreatedAt,
-            //                IsFavorited = user.FavoritedProducts.Any(fp => fp.Id == p.Product.Id),
-            //                Quantity = p.Product.Quantity
-
-            //            }
-            //        }).ToList()
-            //    }).ToList(),
-
-            //    FavoritedProducts = user.FavoritedProducts.Select(fp => new ForProfileProductDto
-            //    {
-
-            //        Id = fp.Id,
-            //        Name = fp.Name,
-            //        Price = fp.Price,
-            //        Description = fp.Description,
-            //        Size = fp.Size,
-            //        Category = fp.Category,
-            //        CreatedAt = fp.CreatedAt,
-            //        IsFavorited = true, // Since these are favorited products, we can set this to true
-            //        //Quantity = user.CartItems.FirstOrDefault(ci => ci.ProductId == fp.Id)?.Quantity ?? 0 // Get quantity from cart if exists
-
-            //    }).ToList()
-
-
-
-
-            //};
-
-            //var TotalPrice = user.CartItems.Sum(c => c.Quantity * c.Product.Price);
-
-
-            return Ok(new ApiResponse<OnlyUserInfoDto>
-            {
-                Data = userProfileDto, 
-                Status = StatusCodes.Status200OK,
-                Message = "" /////// display: flex; 
-            });
-        }
-
-
-        /// this is update user badrii !!!!!!!!!!
-        /// 
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User, Admin")]
-        [HttpPut("Update-Current-User")]
-        public async Task<IActionResult> UpdateCurrentUser(UserProfileUPTDto dto)
-        {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-
-            if (userIdClaim == null)
-                return Unauthorized(new ApiResponse<bool>
-                {
-                    Data = false,
-                    Status = StatusCodes.Status401Unauthorized,
-                    Message = "user Id Claim is null"
-                });
-
-            int userId = Convert.ToInt32(userIdClaim.Value);
-
-            var profileUser = await _db.UserProfiles.Include(c => c.CartItems)
-                .FirstOrDefaultAsync(u => u.UserId == userId);
-
-            if (profileUser == null)
-                return NotFound(new ApiResponse<bool>
-                {
-                    Data = false,
-                    Status = StatusCodes.Status404NotFound,
-                    Message = "Profile user not found"
-                });
-
-            profileUser.FullName = dto.FullName;
-
-            var ExistingPhoneNumlUser = await _db.UserProfiles
-                .FirstOrDefaultAsync(u => u.PhoneNumber == dto.PhoneNumber && u.UserId != userId);
-
-            if (ExistingPhoneNumlUser != null)
-            {
-                ApiResponse<bool> ResEmailConflict = new()
-                {
-                    Data = false,
-                    Status = StatusCodes.Status409Conflict,
-                    Message = "Phone is already in use by another user"
-                };
-                return Conflict(ResEmailConflict);
-            }
-
-            profileUser.PhoneNumber = dto.PhoneNumber;
-
-            var ExistingEmailUser = await _db.UserProfiles
-                .FirstOrDefaultAsync(u => u.Email == dto.Email && u.UserId != userId);
-
-            if (ExistingEmailUser != null)
-            {
-                ApiResponse<bool> ResEmailConflict = new()
-                {
-                    Data = false,
-                    Status = StatusCodes.Status409Conflict,
-                    Message = "Email is already in use by another user"
-                };
-                return Conflict(ResEmailConflict);
-            } 
-
-            profileUser.Email = dto.Email;
-
-            await _db.SaveChangesAsync();
-
-            ApiResponse<UserProfile> res = new()
-            {
-                Data = profileUser,
-                Status = StatusCodes.Status200OK,
-                Message = "Updated successfully"
-            };
-
-            return Ok(res);
-        }
-
-
-        /// this is delete badri!!!!!!!!!!!!!!!!!!!!!!!!!!
-        /// 
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User, Admin")]
-        [HttpDelete("Delete-Current-User")]
-        public async Task<IActionResult> DeleteCurrentUser()
-        {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-
-            if (userIdClaim == null)
-                return Unauthorized(new ApiResponse<bool>
-                {
-                    Data = false,
-                    Status = StatusCodes.Status401Unauthorized,
-                    Message = "user Id Claim is null"
-                });
-
-            int userId = Convert.ToInt32(userIdClaim.Value);
-
-            var profileUser = await _db.UserProfiles
-                .FirstOrDefaultAsync(u => u.UserId == userId);
-
-            if (profileUser == null)
-                return NotFound(new ApiResponse<bool>
-                {
-                    Data = false,
-                    Status = StatusCodes.Status404NotFound,
-                    Message = "Profile user not found"
-                });
-
-            _db.Remove(profileUser);
-            await _db.SaveChangesAsync();
-
-            ApiResponse<UserProfile> res = new()
-            {
-                Data = profileUser,
-                Status = StatusCodes.Status200OK,
-                Message = "Removed successfully"
-            };
-
-            return Ok(res);
-        }
-
-
-
-        //[HttpDelete("Delete-User-byid/{id}")]
-        //public async Task<IActionResult> GetUserById(int id)
-        //{
-        //    var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id);
-
-        //    if (user == null)
-        //    {
-
-        //        ApiResponse<bool> ResNotFound = new()
-        //        {
-        //            Data = false,
-        //            Status = StatusCodes.Status404NotFound,
-        //            Message = "User not found"
-
-        //        };
-
-
-        //        return NotFound(ResNotFound);
-        //    }
-
-        //    _db.Remove(user);
-        //    await _db.SaveChangesAsync();
-        //    return Ok("success");
-        //}
-
-
-        //////////////////////////////// stop here uppen cuz it is admin functionality and we will do it in admin controller
-        ///
-
-
-
-        //// we want to add Userverification by email, add new property userIsVerified in userProfile when code is right user verification will be verified from enum and when it is the other options will work we have to protect api with jwt + verification property fron enum.  verified and no verified.  1 end point verify otp.         
-
-
-
-
-        // I THINK THIS BITCH WORKS NOW!!!!!!!!
-    }
-}
+﻿//using System.Security.Claims;
+//using Eccomerce_Web.Common.Dtos.Responses;
+//using Eccomerce_Web.Common.Services.Interfaces;
+//using Eccomerce_Web.Data;
+//using Eccomerce_Web.Dtos;
+//using Eccomerce_Web.Models.User;
+//using Microsoft.AspNetCore.Authentication.JwtBearer;
+//using Microsoft.AspNetCore.Authorization;
+//using Microsoft.AspNetCore.Mvc;
+//using Microsoft.EntityFrameworkCore;
+
+//namespace Eccomerce_Web.Controllers
+//{
+//    [Route("api/[controller]")]
+//    [ApiController]
+//    public class UserController : ControllerBase
+//    {
+//        private readonly DataContext _db ;
+//        private readonly IJWTService _IJWTService;
+//        private readonly IPhoneSender _phoneSender;
+
+//        public UserController(DataContext db, IJWTService JW, IPhoneSender ph )
+//        {
+//            _db = db;
+//            _IJWTService = JW;
+//            _phoneSender = ph;
+
+//        }
+
+
+//        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User, Admin")]
+//        [HttpGet("Get-Current-User")]
+//        public async Task<IActionResult> GetUserProfile()
+//        {
+//            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+//            var userRoleClaim = User.FindFirst(ClaimTypes.Role);
+
+//            if (userIdClaim == null || userRoleClaim == null)
+//                return Unauthorized(new ApiResponse<bool>
+//                {
+//                    Data = false,
+//                    Status = StatusCodes.Status401Unauthorized,
+//                    Message = "user Id Claim and user Role Claim is null"
+//                });
+
+//            int userId = int.Parse(userIdClaim.Value);
+
+//            var user = await _db.UserProfiles
+//                .Include(u => u.CartItems)
+//                    .ThenInclude(c => c.Product)
+//                    .Include(o => o.Order).ThenInclude(p => p.Products)
+//                     .Include(f => f.FavoritedProducts) .AsNoTracking()
+//                .FirstOrDefaultAsync(u => u.UserId == userId);
+
+//            if (user == null)
+//                return Unauthorized(new ApiResponse<bool>
+//                {
+//                    Data = false,
+//                    Status = StatusCodes.Status404NotFound,
+//                    Message = "User not found"
+//                });
+
+
+//            OnlyUserInfoDto userProfileDto = new OnlyUserInfoDto
+//            {
+//                Id = user.Id,
+//                Email = user.Email,
+//                FullName = user.FullName,
+//                PhoneNumber = user.PhoneNumber,
+//                Role = user.Role,
+//                isVerified = user.isVerified,
+//            };
+
+
+
+//            return Ok(new ApiResponse<OnlyUserInfoDto>
+//            {
+//                Data = userProfileDto, 
+//                Status = StatusCodes.Status200OK,
+//                Message = "" /////// display: flex; 
+//            });
+//        }
+
+
+       
+        
+
+
+//        [HttpPost("add-phone")]
+//        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+//        public async Task<IActionResult> AddPhone(string phone)
+//        {
+//            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+//            var user = await _db.UserProfiles.FirstOrDefaultAsync(o => o.UserId == userId);
+//            var FoundeUserWithPhone = await _db.UserProfiles.FirstOrDefaultAsync(p => p.PhoneNumber == phone);
+//            if (user == null)
+//                return Unauthorized(new ApiResponse<bool> { Data = false, Status = StatusCodes.Status401Unauthorized, Message = "User not found" });
+//            if(FoundeUserWithPhone != null)
+//            {
+//                return BadRequest(new ApiResponse<bool> { Data = false, Status = StatusCodes.Status400BadRequest, Message = "this phone is already in use" });
+//            }
+            
+
+//            await _phoneSender.SendPhoneMessage(phone);
+
+//            return Ok(new ApiResponse<bool>
+//            {
+//                Data = true,
+//                Status = StatusCodes.Status200OK,
+//                Message = "Verification code sent to your phone"
+//            });
+//        }
+
+//        [HttpPost("verify-phone")]
+//        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+//        public async Task<IActionResult> VerifyPhone(string phone, string code)
+//        {
+//            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+//            var user = await _db.UserProfiles.FirstOrDefaultAsync(p => p.UserId == userId);
+//            if (user == null)
+//                return Unauthorized(new ApiResponse<bool> { Data = false, Status = StatusCodes.Status401Unauthorized, Message = "User not found" });
+
+            
+//            var isVerified = await _phoneSender.VerifyPhoneCode(phone, code);
+
+//            if (!isVerified)
+//            {
+               
+//                return BadRequest(new ApiResponse<bool>
+//                {
+//                    Data = false,
+//                    Status = StatusCodes.Status400BadRequest,
+//                    Message = "Invalid verification code. Phone not saved."
+//                });
+//            }
+
+         
+//            user.PhoneNumber = phone;
+          
+//            await _db.SaveChangesAsync();
+
+//            return Ok(new ApiResponse<bool>
+//            {
+//                Data = true,
+//                Status = StatusCodes.Status200OK,
+//                Message = "Phone verified and saved successfully"
+//            });
+//        }
+
+
+//        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User, Admin")]
+//        [HttpDelete("Delete-Current-User")]
+//        public async Task<IActionResult> DeleteCurrentUser()
+//        {
+//            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+//            if (userIdClaim == null)
+//                return Unauthorized(new ApiResponse<bool>
+//                {
+//                    Data = false,
+//                    Status = StatusCodes.Status401Unauthorized,
+//                    Message = "user Id Claim is null"
+//                });
+
+//            int userId = Convert.ToInt32(userIdClaim.Value);
+
+//            var profileUser = await _db.UserProfiles
+//                .FirstOrDefaultAsync(u => u.UserId == userId);
+
+//            if (profileUser == null)
+//                return NotFound(new ApiResponse<bool>
+//                {
+//                    Data = false,
+//                    Status = StatusCodes.Status404NotFound,
+//                    Message = "Profile user not found"
+//                });
+
+//            _db.Remove(profileUser);
+//            await _db.SaveChangesAsync();
+
+//            ApiResponse<UserProfile> res = new()
+//            {
+//                Data = profileUser,
+//                Status = StatusCodes.Status200OK,
+//                Message = "Removed successfully"
+//            };
+
+//            return Ok(res);
+//        }
+       
+
+
+//    }
+//}

@@ -26,13 +26,5 @@ namespace Eccomerce_Web.Dtos
 
         public List<ForProfileProductDto> FavoritedProducts { get; set; } = new();
 
-
-       
-
-
-
-
-
-
     }
 }

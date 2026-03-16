@@ -1,16 +1,17 @@
 ﻿
 
 using System.Security.Claims;
+using Eccomerce_Web.Common.Services.Interfaces;
 using Eccomerce_Web.CORE;
 using Eccomerce_Web.Data;
 using Eccomerce_Web.Dtos;
-using Eccomerce_Web.Models;
-using Eccomerce_Web.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Eccomerce_Web.Common.Dtos.Responses;
+using Eccomerce_Web.Models.Cart;
 
 namespace Eccomerce_Web.Controllers
 {
@@ -28,12 +29,12 @@ namespace Eccomerce_Web.Controllers
             _IJWTService = jw;
         }
 
-
         [HttpGet("Cart-Products")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User, Admin")]
 
         public async Task<IActionResult> GetCartItems()
         {
+
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
                 return Unauthorized(new ApiResponse<bool>
                 {
@@ -42,6 +43,7 @@ namespace Eccomerce_Web.Controllers
                     Message = "Error Finding User!"
                 });
 
+           
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
             var userRoleClaim = User.FindFirst(ClaimTypes.Role);
 
@@ -57,7 +59,7 @@ namespace Eccomerce_Web.Controllers
                 .Include(u => u.CartItems)
                 .ThenInclude(c => c.Product)
                 .FirstOrDefaultAsync(u => u.UserId == userId);
-
+       
             var cartItems = await _db.CartItems
                 .Include(c => c.Product)
                 .Where(c => c.UserId == userId).AsNoTracking()
@@ -70,6 +72,20 @@ namespace Eccomerce_Web.Controllers
                 Status = StatusCodes.Status401Unauthorized,
                 Message = "User is null"
             });
+
+            if (user.isVerified == false)
+            {
+                return
+               BadRequest(
+                   new ApiResponse<bool>
+                   {
+                       Data = false,
+                       Status = StatusCodes.Status400BadRequest,
+                       Message = "You need to verify Your account first!"
+
+                   }
+                   );
+            }
 
             var cartItemsDto = cartItems.Select(c => new ForCartItems
             {
@@ -95,13 +111,9 @@ namespace Eccomerce_Web.Controllers
             {
                 Data = cartItemsDto,
                 Status = StatusCodes.Status200OK,
-                Message = $"Cart items retrieved successfully total price: {totalPrice}",
+                Message = $"Cart items retrieved successfully total price: {totalPrice}    {user.isVerified}",
             });
         }
-
-
-
-
 
         [HttpPost("Cart-Product-Add")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User, Admin")]
@@ -126,6 +138,20 @@ namespace Eccomerce_Web.Controllers
                 Message = "Error Finding User!"
             });
 
+            if (user.isVerified == false)
+            {
+                return
+               BadRequest(
+                   new ApiResponse<bool>
+                   {
+                       Data = false,
+                       Status = StatusCodes.Status400BadRequest,
+                       Message = "You need to verify Your account first!"
+
+                   }
+                   );
+            }
+
             var product = await _db.Products.FirstOrDefaultAsync(p => p.Id == ProductId);
 
             if (product == null)
@@ -144,14 +170,13 @@ namespace Eccomerce_Web.Controllers
                     Message = "Invalid quantity"
                 });
 
-            // Check if product already exists in cart
             var existingItem = _db.CartItems.Include(c => c.Product).Where(c => c.UserId == userId && c.ProductId == ProductId).FirstOrDefault();
 
 
             if (existingItem != null)
             {
                 if (existingItem.Quantity + Quantity > product.Quantity)
-                    return BadRequest(new ApiResponse<bool>                /////////// 04.03.26 00:55 need to make it work !!!! from Badri || 01:00 IT IS WORKING NICE!!!!!!!!!
+                    return BadRequest(new ApiResponse<bool>               
                     {
                         Data = false,
                         Status = StatusCodes.Status400BadRequest,
@@ -195,14 +220,6 @@ namespace Eccomerce_Web.Controllers
             });
         }
 
-
-
-
-
-
-
-
-
         [HttpPut("Cart-Product-Update")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User, Admin")]
         public async Task<IActionResult> UpdateCartItem(int CartItemId, int Quantity)
@@ -214,9 +231,38 @@ namespace Eccomerce_Web.Controllers
                     Status = StatusCodes.Status401Unauthorized,
                     Message = "Error Finding User!"
                 });
+           
+            var user = await _db.UserProfiles
+               .Include(u => u.CartItems)
+               .FirstOrDefaultAsync(u => u.UserId == userId);
+
+            if (user == null) return Unauthorized(new ApiResponse<bool>
+            {
+                Data = false,
+                Status = StatusCodes.Status401Unauthorized,
+                Message = "Error Finding User!"
+            });
+
+            if (user.isVerified == false)
+            {
+                return
+               BadRequest(
+                   new ApiResponse<bool>
+                   {
+                       Data = false,
+                       Status = StatusCodes.Status400BadRequest,
+                       Message = "You need to verify Your account first!"
+
+                   }
+                   );
+            }
+
             var cartItem = await _db.CartItems
-                .Include(c => c.Product)
-                .FirstOrDefaultAsync(c => c.Id == CartItemId && c.UserId == userId);
+               .Include(c => c.Product)
+               .FirstOrDefaultAsync(c => c.Id == CartItemId && c.UserId == userId);
+
+
+
             if (cartItem == null)
                 return NotFound(new ApiResponse<bool>
                 {
@@ -245,9 +291,6 @@ namespace Eccomerce_Web.Controllers
             });
         }
 
-
-
-
         [HttpDelete("Cart-Product-Clear-whole")]
 
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User, Admin")]
@@ -260,6 +303,32 @@ namespace Eccomerce_Web.Controllers
                     Status = StatusCodes.Status401Unauthorized,
                     Message = "Error Finding User!"
                 });
+
+            var user = await _db.UserProfiles
+             .Include(u => u.CartItems)
+             .FirstOrDefaultAsync(u => u.UserId == userId);
+
+            if (user == null) return Unauthorized(new ApiResponse<bool>
+            {
+                Data = false,
+                Status = StatusCodes.Status401Unauthorized,
+                Message = "Error Finding User!"
+            });
+
+            if (user.isVerified == false)
+            {
+                return
+               BadRequest(
+                   new ApiResponse<bool>
+                   {
+                       Data = false,
+                       Status = StatusCodes.Status400BadRequest,
+                       Message = "You need to verify Your account first!"
+
+                   }
+                   );
+            }
+
             var cartItems = await _db.CartItems.Where(c => c.UserId == userId).ToListAsync();
             if (cartItems.Count == 0)
                 return NotFound(new ApiResponse<bool>
@@ -279,8 +348,6 @@ namespace Eccomerce_Web.Controllers
 
         }
 
-
-
         [HttpDelete("Cart-Product-Delete")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User, Admin")] 
 
@@ -294,13 +361,39 @@ namespace Eccomerce_Web.Controllers
                     Status = StatusCodes.Status401Unauthorized,
                     Message = "Error Finding User!"
                 });
-            var cartItem = await _db.CartItems.FirstOrDefaultAsync(c => c.Id == CartItemId && c.UserId == userId);
+
+            var user = await _db.UserProfiles
+             .Include(u => u.CartItems)
+             .FirstOrDefaultAsync(u => u.UserId == userId);
+
+            if (user == null) return Unauthorized(new ApiResponse<bool>
+            {
+                Data = false,
+                Status = StatusCodes.Status401Unauthorized,
+                Message = "Error Finding User!"
+            });
+
+            if (user.isVerified == false)
+            {
+                return
+               BadRequest(
+                   new ApiResponse<bool>
+                   {
+                       Data = false,
+                       Status = StatusCodes.Status400BadRequest,
+                       Message = "You need to verify Your account first!"
+
+                   }
+                   );
+            }
+
+          var cartItem = await _db.CartItems.FirstOrDefaultAsync(c => c.Id == CartItemId && c.UserId == userId);
             if (cartItem == null)
                 return NotFound(new ApiResponse<bool>
                 {
                     Data = false,
                     Status = StatusCodes.Status404NotFound,
-                    Message = "Cart not found"
+                    Message = "Product is not found in cart"
                 });
             _db.CartItems.Remove(cartItem);
 

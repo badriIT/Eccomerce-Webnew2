@@ -1,4 +1,6 @@
-﻿using Eccomerce_Web.Models;
+﻿using Eccomerce_Web.Models.Cart;
+using Eccomerce_Web.Models.Product;
+using Eccomerce_Web.Models.User;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 

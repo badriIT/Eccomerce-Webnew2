@@ -1,13 +1,14 @@
-﻿using Eccomerce_Web.CORE;
+﻿using Eccomerce_Web.Common.Services.Interfaces;
+using Eccomerce_Web.CORE;
 using Eccomerce_Web.Data;
 using Eccomerce_Web.Dtos;
 using Eccomerce_Web.Models;
-using Eccomerce_Web.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using Eccomerce_Web.Common.Dtos.Responses;
 
 namespace Eccomerce_Web.Controllers
 {
@@ -25,7 +26,6 @@ namespace Eccomerce_Web.Controllers
         }
 
 
-
         [HttpGet("Get-All-Orders")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User, Admin")]
         public async Task<IActionResult> GetAllOrders()
@@ -37,6 +37,31 @@ namespace Eccomerce_Web.Controllers
                     Status = StatusCodes.Status401Unauthorized,
                     Message = "Error Finding User!"
                 });
+
+            var user = await _db.UserProfiles
+             .Include(u => u.CartItems)
+             .FirstOrDefaultAsync(u => u.UserId == userId);
+
+            if (user == null) return Unauthorized(new ApiResponse<bool>
+            {
+                Data = false,
+                Status = StatusCodes.Status401Unauthorized,
+                Message = "Error Finding User!"
+            });
+
+            if (user.isVerified == false)
+            {
+                return
+               BadRequest(
+                   new ApiResponse<bool>
+                   {
+                       Data = false,
+                       Status = StatusCodes.Status400BadRequest,
+                       Message = "You need to verify Your account first!"
+
+                   }
+                   );
+            }
 
             var orders = await _db.Orders     /// here 
                 .Where(o => o.UserId == userId)
@@ -72,12 +97,7 @@ namespace Eccomerce_Web.Controllers
                         Category = ci.Product.Category,
                         CreatedAt = ci.Product.CreatedAt,
 
-
                     }
-
-
-
-
 
                 }).ToList()
 
@@ -103,6 +123,31 @@ namespace Eccomerce_Web.Controllers
                     Status = StatusCodes.Status401Unauthorized,
                     Message = "Error Finding User!"
                 });
+
+            var user = await _db.UserProfiles
+             .Include(u => u.CartItems)
+             .FirstOrDefaultAsync(u => u.UserId == userId);
+
+            if (user == null) return Unauthorized(new ApiResponse<bool>
+            {
+                Data = false,
+                Status = StatusCodes.Status401Unauthorized,
+                Message = "Error Finding User!"
+            });
+
+            if (user.isVerified == false)
+            {
+                return
+               BadRequest(
+                   new ApiResponse<bool>
+                   {
+                       Data = false,
+                       Status = StatusCodes.Status400BadRequest,
+                       Message = "You need to verify Your account first!"
+
+                   }
+                   );
+            }
 
             if (Quantity <= 0)
                 return BadRequest(new ApiResponse<bool>
@@ -191,8 +236,6 @@ namespace Eccomerce_Web.Controllers
             });
         }
 
-
-        
         [HttpPost("Create-Order-From-Cart")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User, Admin")]
         public async Task<IActionResult> CreateOrderFromCart()
@@ -204,6 +247,34 @@ namespace Eccomerce_Web.Controllers
                     Status = StatusCodes.Status401Unauthorized,
                     Message = "Error Finding User!"
                 });
+
+
+
+            var user = await _db.UserProfiles
+             .Include(u => u.CartItems)
+             .FirstOrDefaultAsync(u => u.UserId == userId);
+
+            if (user == null) return Unauthorized(new ApiResponse<bool>
+            {
+                Data = false,
+                Status = StatusCodes.Status401Unauthorized,
+                Message = "Error Finding User!"
+            });
+
+            if (user.isVerified == false)
+            {
+                return
+               BadRequest(
+                   new ApiResponse<bool>
+                   {
+                       Data = false,
+                       Status = StatusCodes.Status400BadRequest,
+                       Message = "You need to verify Your account first!"
+
+                   }
+                   );
+            }
+
 
             var cartItems = await _db.CartItems
                 .Where(ci => ci.UserId == userId)
@@ -300,11 +371,7 @@ namespace Eccomerce_Web.Controllers
         }
 
 
-
-        
-
-
-        [HttpPut("Order-Update")]  // From Badri (need to fix it in create order from cart it is not working says 404 not found product.)
+        [HttpPut("Order-Update")]  
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User, Admin")]
         public async Task<IActionResult> OrderUpdate(int OrderId, int OrdersProductsId, int Quantity)
         {
@@ -315,6 +382,33 @@ namespace Eccomerce_Web.Controllers
                     Status = StatusCodes.Status401Unauthorized,
                     Message = "Error Finding User!"
                 });
+
+
+
+            var user = await _db.UserProfiles
+             .Include(u => u.CartItems)
+             .FirstOrDefaultAsync(u => u.UserId == userId);
+
+            if (user == null) return Unauthorized(new ApiResponse<bool>
+            {
+                Data = false,
+                Status = StatusCodes.Status401Unauthorized,
+                Message = "Error Finding User!"
+            });
+
+            if (user.isVerified == false)
+            {
+                return
+               BadRequest(
+                   new ApiResponse<bool>
+                   {
+                       Data = false,
+                       Status = StatusCodes.Status400BadRequest,
+                       Message = "You need to verify Your account first!"
+
+                   }
+                   );
+            }
 
             var order = await _db.Orders
                 .Include(c => c.Products)
@@ -374,6 +468,33 @@ namespace Eccomerce_Web.Controllers
                     Message = "Error Finding User!"
                 });
 
+
+
+            var user = await _db.UserProfiles
+             .Include(u => u.CartItems)
+             .FirstOrDefaultAsync(u => u.UserId == userId);
+
+            if (user == null) return Unauthorized(new ApiResponse<bool>
+            {
+                Data = false,
+                Status = StatusCodes.Status401Unauthorized,
+                Message = "Error Finding User!"
+            });
+
+            if (user.isVerified == false)
+            {
+                return
+               BadRequest(
+                   new ApiResponse<bool>
+                   {
+                       Data = false,
+                       Status = StatusCodes.Status400BadRequest,
+                       Message = "You need to verify Your account first!"
+
+                   }
+                   );
+            }
+
             var order = await _db.Orders
                 .Include(o => o.Products)
                 .FirstOrDefaultAsync(o => o.Id == OrderId && o.UserId == userId);
@@ -396,78 +517,6 @@ namespace Eccomerce_Web.Controllers
                 Message = "Order Deleted"
             });
         }
-
-
-
-        //    [HttpPut("Order-Update")]
-        //    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User")]
-        //    public async Task<IActionResult> OrderUpdate(int OrderId, int OrdersProductsId, int Quantity)
-        //    {
-        //        if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
-        //            return Unauthorized();
-
-        //        // FIX 1: Use ThenInclude instead of .Select() inside Include
-        //        var order = await _db.Orders
-        //            .Include(c => c.Products)
-        //                .ThenInclude(u => u.Product)
-        //            .FirstOrDefaultAsync(c => c.Id == OrderId && c.UserId == userId);
-
-        //        var OrdersProducts = order.Products.Select(p => p.Product.Id == OrdersProductsId);
-
-
-        //        //var user = await _db.UserProfiles.FirstOrDefaultAsync(o => o.UserId == userId);
-
-
-
-
-        //        if (order == null)
-        //        {
-        //            return NotFound(new ApiResponse<bool>
-        //            {
-        //                Data = false,
-        //                Status = StatusCodes.Status404NotFound,
-        //                Message = "Order not found"
-        //            });
-        //        }
-
-        //        if (!OrdersProducts.Any())
-        //        {
-        //            return NotFound(new ApiResponse<bool>
-        //            {
-        //                Data = false,
-        //                Status = StatusCodes.Status404NotFound,
-        //                Message = "Products Id not found"
-        //            });
-        //        }
-
-        //        if (order.Products.Any(u => u.Product.Quantity <= 0))
-        //        {
-        //            return BadRequest(new ApiResponse<bool>
-        //            {
-        //                Data = false,
-        //                Status = StatusCodes.Status400BadRequest,
-        //                Message = "Invalid quantity"
-        //            });
-        //        }
-
-        //        //order.Products.ForEach(o => o.Quantity = Quantity);
-
-        //        var updateOrderDto = new CartItemsForOrderDto()
-        //        {
-        //            SelectedQuantity = Quantity
-        //        };
-
-
-        //        await _db.SaveChangesAsync();
-
-        //        return Ok(new ApiResponse<Order>
-        //        {
-        //            Data = order,
-        //            Status = StatusCodes.Status200OK,
-        //            Message = "Order updated"
-        //        });
-        //    }
-        //}
     }
 }
 

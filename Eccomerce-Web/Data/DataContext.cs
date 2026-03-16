@@ -1,4 +1,7 @@
-﻿using Eccomerce_Web.Models;
+﻿using Eccomerce_Web.Models.Admin;
+using Eccomerce_Web.Models.Cart;
+using Eccomerce_Web.Models.Product;
+using Eccomerce_Web.Models.User;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eccomerce_Web.Data
@@ -11,9 +14,7 @@ namespace Eccomerce_Web.Data
         public DbSet<Product> Products { get; set; }
         public DbSet<UserProfile> UserProfiles { get; set; }
         public DbSet<User> Users { get; set; }
-
         public DbSet<OrderItem> OrderItems { get; set; }
-
         public DbSet<Admin> Admins { get; set; }
 
 

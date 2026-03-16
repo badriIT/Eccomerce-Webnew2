@@ -1,8 +1,11 @@
-﻿using Eccomerce_Web.CORE;
+﻿
+using Eccomerce_Web.Common.Dtos.Responses;
+using Eccomerce_Web.Common.Services.Interfaces;
+using Eccomerce_Web.CORE;
 using Eccomerce_Web.Data;
 using Eccomerce_Web.Dtos;
 using Eccomerce_Web.Models;
-using Eccomerce_Web.Services.Interfaces;
+using Eccomerce_Web.Modules.User.Dtos.Response;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;

@@ -1,13 +1,18 @@
-﻿using Eccomerce_Web.CORE;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
+using Eccomerce_Web.Common.Dtos.Responses;
+using Eccomerce_Web.Common.Services.Interfaces;
 using Eccomerce_Web.Data;
 using Eccomerce_Web.Dtos;
 using Eccomerce_Web.Models;
-using Eccomerce_Web.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Eccomerce_Web.Models.User;
+
+
 
 namespace Eccomerce_Web.Controllers
 {
@@ -18,54 +23,112 @@ namespace Eccomerce_Web.Controllers
         private readonly DataContext _db;
         private readonly IJWTService _JWTService;
         private readonly IEmailSender _emailSender;
-<<<<<<< HEAD
+
         private readonly IPhoneSender _phoneSender;
+        public AuthController(DataContext db, IJWTService jwt, IEmailSender emailSender,  IPhoneSender phoneSender )
 
-
-        public AuthController(DataContext db, IJWTService jwt, IEmailSender emailSender, IPhoneSender phoneSender)
-=======
-
-
-        public AuthController(DataContext db, IJWTService jwt, IEmailSender emailSender)
->>>>>>> 78fc563eed88638548b1f7792efd1864c6c9a2d1
         {
             _db = db;
             _JWTService = jwt;
             _emailSender = emailSender;
-<<<<<<< HEAD
+
             _phoneSender = phoneSender;
-=======
+           
         }
 
-        [HttpPost("send-email")]
-        public async Task<IActionResult> VerifyEmail()
+
+        [HttpPost("verify-email")]
+        public async Task<IActionResult> VerifyEmail(string code, string email)
         {
+            var userProfile = await _db.UserProfiles
+                .FirstOrDefaultAsync(x => x.Email == email);
+
+            if (userProfile == null)
+            {
+                return BadRequest(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status400BadRequest,
+                    Message = "User Not Found"
+                });
+            }
+
+            if (userProfile.VerificationCode != code)
+            {
+                return BadRequest(new ApiResponse<bool>
+                {
+                    Data = false,
+                    Status = StatusCodes.Status400BadRequest,
+                    Message = "Code is not correct"
+                });
+            }
+
+            userProfile.isVerified = true;
+
+            await _db.SaveChangesAsync();
+
+            return Ok(new ApiResponse<bool>
+            {
+                Data = true,
+                Status = StatusCodes.Status200OK,
+                Message = "User Verified Successfully! Now You Can Login"
+            });
+        }
+
+        [HttpPost("Send-Verification-Code")]
+
+
+        public async Task<IActionResult> SendEmailVerificationCode( [Required] [EmailAddress] string email)
+        {
+            
+            if (email == null)
+            {
+
+                return
+                BadRequest(
+                    new ApiResponse<bool>
+                    {
+                        Data = false,
+                        Status = StatusCodes.Status400BadRequest,
+                        Message = "write your email"
+                        
+                    }
+                    );
+            }
+            
+
+            var FoundedUser = await _db.UserProfiles.FirstOrDefaultAsync(p => p.Email == email);
+
+            if(FoundedUser == null)
+            {
+                return
+              BadRequest(
+                  new ApiResponse<bool>
+                  {
+                      Data = false,
+                      Status = StatusCodes.Status400BadRequest,
+                      Message = "this email is not registered"
+
+                  }
+                  );
+            }
+            
+
+            string code = Guid.NewGuid().ToString("N")[..5].ToUpper();
+
+             FoundedUser.VerificationCode = code;
+
             await _emailSender.SendEmailAsync(
-                "badriberidze042@gmail.com"
-            );
-            return Ok("Email sent!");
->>>>>>> 78fc563eed88638548b1f7792efd1864c6c9a2d1
-        }
+                email,
+                code
 
-        [HttpPost("send-email")]
-        public async Task<IActionResult> VerifyEmail()
-        {
-            await _emailSender.SendEmailAsync(
-                "badriberidze042@gmail.com"
             );
-            return Ok("Email sent!");
-        }
 
-        [HttpPost("send-sms")]
-        public async Task<IActionResult> SendSMSToPhone()
-        {
-            await _phoneSender.SendPhoneMessage(
-                "555585103"
-            );
-            return Ok("SMS sent!");
-        }
+            await _db.SaveChangesAsync();
+          
+            return Ok($"Email sent!" );
 
-        
+        }
 
 
         [HttpPost("Register")]
@@ -115,6 +178,9 @@ namespace Eccomerce_Web.Controllers
 
             await _db.UserProfiles.AddAsync(userProfile);
             await _db.SaveChangesAsync();
+
+             await this.SendEmailVerificationCode(user.Email);
+            
 
             ApiResponse<string> ResponseOK = new()
             {

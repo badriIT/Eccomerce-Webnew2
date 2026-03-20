@@ -1,3 +1,4 @@
+using Eccomerce_Web.Common.Extensions;
 using Eccomerce_Web.Data;
 using Eccomerce_Web.Extensions;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,7 @@ builder.Services.AddAppAuthentication(builder.Configuration);
 
 builder.Services.AddAppSwagger();
 builder.Services.AddModules();
+builder.Services.AddFluentValidator();
 builder.Services.AddDbContext<DataContext>();
 
 var app = builder.Build();

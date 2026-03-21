@@ -44,7 +44,6 @@
     <Folder Include="Modules\CartItems\Validators\" />
     <Folder Include="Modules\Orders\Dtos\Request\" />
     <Folder Include="Modules\Orders\Validators\" />
-    <Folder Include="Modules\Products\Validators\" />
     <Folder Include="Modules\Purchase\Dtos\Response\" />
     <Folder Include="Modules\Purchase\Dtos\Request\" />
     <Folder Include="Modules\Purchase\Validators\" />

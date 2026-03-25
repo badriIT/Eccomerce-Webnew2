@@ -2,6 +2,7 @@
 using Eccomerce_Web.Modules.Auth.Dtos.Request;
 using Eccomerce_Web.Modules.Auth.Service.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Eccomerce_Web.Modules.Auth.Controller
 {
@@ -16,6 +17,7 @@ namespace Eccomerce_Web.Modules.Auth.Controller
             _authService = authService;
         }
 
+        [EnableRateLimiting("verify")]
         [HttpPost("verify-email")]
         public async Task<IActionResult> VerifyEmail(string code, string email)
         {
@@ -23,6 +25,8 @@ namespace Eccomerce_Web.Modules.Auth.Controller
             return StatusCode(res.Status, res);
         }
 
+
+        [EnableRateLimiting("verify")]
         [HttpPost("Send-Verification-Code")]
         public async Task<IActionResult> SendEmailVerificationCode([Required][EmailAddress] string email)
         {
@@ -30,6 +34,8 @@ namespace Eccomerce_Web.Modules.Auth.Controller
             return StatusCode(res.Status, res);
         }
 
+
+        [EnableRateLimiting("register")]
         [HttpPost("Register")]
         public async Task<IActionResult> AddUser(RegisterDto user)
         {
@@ -40,6 +46,7 @@ namespace Eccomerce_Web.Modules.Auth.Controller
             return StatusCode(res.Status, res);
         }
 
+        [EnableRateLimiting("login")]
         [HttpPost("Login")]
         public async Task<IActionResult> Login(LoginDto login)
         {

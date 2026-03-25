@@ -18,6 +18,10 @@ public class UserProfile
     public string Role { get; set; } = "User";
     public bool isVerified { get; set; } = false;
     public string ?VerificationCode { get; set; }
+    public DateTime? CodeCreatedAt { get; set; }
+    public int VerificationAttempts { get; set; }
+
+
 
 
     public List<Order> Order { get; set; } = new();

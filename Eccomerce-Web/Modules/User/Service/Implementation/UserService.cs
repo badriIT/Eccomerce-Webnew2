@@ -95,15 +95,21 @@ namespace Eccomerce_Web.Modules.User.Service.Implementation
         public async Task<ApiResponse<UserProfile>> DeleteCurrentUser(int userId)
         {
             var user = await _db.UserProfiles.FirstOrDefaultAsync(u => u.UserId == userId);
+            var UserReg = await _db.Users.FirstOrDefaultAsync(u => u.Email == user.Email);
+
             if (user == null)
+                return ApiResponse<UserProfile>.NotFound("Profile user not found");
+            
+            if (UserReg == null)
                 return ApiResponse<UserProfile>.NotFound("Profile user not found");
 
             _db.UserProfiles.Remove(user);
+            _db.Users.Remove(UserReg);
             await _db.SaveChangesAsync();
 
             return new ApiResponse<UserProfile>
             {
-                Data = user,
+                Data = null,
                 Status = 200,
                 Message = "Removed successfully"
             };

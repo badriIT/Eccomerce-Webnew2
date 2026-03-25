@@ -1,7 +1,9 @@
-﻿namespace Eccomerce_Web.Common.Services.Interfaces
+﻿using Eccomerce_Web.Common.Dtos.Responses;
+
+namespace Eccomerce_Web.Common.Services.Interfaces
 {
     public interface IEmailSender
     {
-        Task SendEmailAsync(string email, string code);
+        Task<ApiResponse<bool>> SendEmailAsync(string email, string code);
     }
 }

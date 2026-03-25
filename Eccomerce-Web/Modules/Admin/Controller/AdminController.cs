@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Eccomerce_Web.Modules.Admin.Controller
 {
@@ -16,6 +17,7 @@ namespace Eccomerce_Web.Modules.Admin.Controller
             _adminService = adminService;
         }
 
+        
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
         [HttpGet("Get-All-Succsessfull-Orders")]
         public async Task<IActionResult> GetAllSecsessfullOrders()

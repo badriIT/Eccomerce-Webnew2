@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Eccomerce_Web.Common.Dtos.Responses;
 using Eccomerce_Web.Common.Services.Interfaces;
+using Eccomerce_Web.Common.Services.ServiceModels;
 using Eccomerce_Web.Data;
 using Eccomerce_Web.Models;
 using Eccomerce_Web.Models.User;
@@ -15,12 +16,14 @@ namespace Eccomerce_Web.Modules.Auth.Service.Implementation
         private readonly DataContext _db;
         private readonly IJWTService _jwtService;
         private readonly IEmailSender _emailSender;
+       
 
         public AuthService(DataContext db, IJWTService jwtService, IEmailSender emailSender)
         {
             _db = db;
             _jwtService = jwtService;
             _emailSender = emailSender;
+          
         }
 
         public async Task<ApiResponse<bool>> VerifyEmail(string code, string email)
@@ -28,11 +31,47 @@ namespace Eccomerce_Web.Modules.Auth.Service.Implementation
             var userProfile = await _db.UserProfiles
                 .FirstOrDefaultAsync(x => x.Email == email);
 
+           
+
+
+
+
             if (userProfile == null)
                 return ApiResponse<bool>.BadRequest("User Not Found");
 
+            
+            var CodeTime = userProfile.CodeCreatedAt.Value;
+
+          
+
+            if ((DateTime.UtcNow - CodeTime).TotalMinutes > 10)
+            {
+                return ApiResponse<bool>.BadRequest("Code Expired Try again");
+            }
+
+
             if (userProfile.VerificationCode != code)
+            {
+                userProfile.VerificationAttempts += 1;
+
+                if (userProfile.VerificationAttempts >= 10)
+                {
+                    userProfile.VerificationCode = null;
+                    await _db.SaveChangesAsync();
+                    return ApiResponse<bool>.BadRequest("too many attempts, code reset");
+                }
+
+                if (userProfile.VerificationAttempts >= 3)
+                {
+                    await _db.SaveChangesAsync();
+                    return ApiResponse<bool>.BadRequest("too many attempts, try again later");
+                }
+
+                await _db.SaveChangesAsync();
                 return ApiResponse<bool>.BadRequest("Code is not correct");
+            }
+
+
 
             userProfile.isVerified = true;
             await _db.SaveChangesAsync();

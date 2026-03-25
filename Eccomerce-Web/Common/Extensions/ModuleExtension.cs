@@ -1,4 +1,5 @@
-﻿using Eccomerce_Web.Modules.Admin;
+﻿using Eccomerce_Web.Common.Extensions;
+using Eccomerce_Web.Modules.Admin;
 using Eccomerce_Web.Modules.Auth;
 using Eccomerce_Web.Modules.CartItems;
 using Eccomerce_Web.Modules.Orders;
@@ -19,6 +20,7 @@ public static class ModuleExtensions
         services.AddProductsModule();
         services.AddPurchaseModule();
         services.AddAdminModule();
+        services.AddRateLimiter();
 
         return services;
     }

@@ -4,16 +4,10 @@ using Eccomerce_Web.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
-
-
 builder.Services.AddAppControllers();
-
 builder.Services.AddCommonServices(builder.Configuration);
-
 builder.Services.AddAppCors();
-
 builder.Services.AddAppAuthentication(builder.Configuration);
-
 builder.Services.AddAppSwagger();
 builder.Services.AddModules();
 builder.Services.AddFluentValidator();
@@ -21,20 +15,13 @@ builder.Services.AddDbContext<DataContext>();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
-app.UseHttpsRedirection();
-
+// app.UseHttpsRedirection(); // Render handles HTTPS
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.UseRateLimiter();
-
 app.MapControllers();
-
-app.Run();
+app.Run(); 

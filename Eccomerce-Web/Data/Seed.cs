@@ -9,12 +9,9 @@ namespace Eccomerce_Web.Data
     {
         public static void Seed(DataContext context)
         {
-            if (context.Products.Any())
-                return; // already seeded
-
-
-
-            var products = new List<Product>
+            if (!context.Products.Any())
+            {
+                var products = new List<Product>
 {
 
 
@@ -142,24 +139,28 @@ namespace Eccomerce_Web.Data
 
 
 };
-            context.Products.AddRange(products);
-            context.SaveChanges();
+                context.Products.AddRange(products);
+                context.SaveChanges();
+            }
 
 
-            if(context.Admins.Any())
-                return; // already seeded
 
-            var admin = new Admin
+
+
+
+            if (!context.Admins.Any())
             {
-               email = "admin@gmail.com",
-               password = BCrypt.Net.BCrypt.HashPassword("Admin1234*"),
-            };
-
-            context.Admins.Add(admin);
-            context.SaveChanges();
+                var admin = new Admin
+                {
+                    email = "admin@gmail.com",
+                    password = BCrypt.Net.BCrypt.HashPassword("Admin1234*"),
+                };
+                context.Admins.Add(admin);
+                context.SaveChanges();
+            }
         }
 
 
-    }
+        }
 
 }

@@ -14,7 +14,7 @@ builder.Services.AddFluentValidator();
 builder.Services.AddDbContext<DataContext>();
 
 var app = builder.Build();
-
+app.Seed(); 
 app.UseSwagger();
 app.UseSwaggerUI();
 
